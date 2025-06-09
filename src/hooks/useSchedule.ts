@@ -77,7 +77,9 @@ export function useSchedule(sync: boolean) {
       }
     };
 
-    if (sync && checkMinutePassed(whenSyncDb())) {
+    const whenSyncedDb = whenSyncDb();
+
+    if (!whenSyncedDb || (sync && checkMinutePassed(whenSyncedDb))) {
       loadSchedule();
     } else {
       // Se a sincronização com o DB estiver desativada, carrega apenas do localStorage

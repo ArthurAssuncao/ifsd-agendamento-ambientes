@@ -6,7 +6,7 @@ export const useScheduleStorage = () => {
 
   const syncDbKey = "syncDbScheduleData";
 
-  const whenSyncDb = useCallback(() => {
+  const whenSyncDb = useCallback((): number | null => {
     try {
       const data = localStorage.getItem(syncDbKey);
       if (data) {
