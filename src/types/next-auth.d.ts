@@ -4,15 +4,23 @@ import "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
-    accessToken: string;
-    refreshToken: string;
+    accessToken?: string;
+    refreshToken?: string;
+    supabaseAccessToken?: string;
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+    };
   }
 }
 
 declare module "next-auth/jwt" {
-  /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
   interface JWT {
-    /** OpenID ID Token */
+    accessToken?: string;
+    refreshToken?: string;
+    id: string;
     idToken?: string;
   }
 }

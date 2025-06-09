@@ -1,195 +1,127 @@
-import { DaysWeek, ScheduleSlot, YearSchedule } from "@/types";
+import { DaysWeek, YearSchedule } from "@/types";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { useScheduleStorage } from "./useScheduleStorage";
 
-type UseScheduleReturn = {
-  schedule: YearSchedule | null;
-  loading: boolean;
-  error: string | null;
-  updateSlot: (
-    week: number,
-    labId: string,
-    day: DaysWeek,
-    time: string,
-    activity?: string
-  ) => Promise<void>;
-  clearSlot: (
-    week: number,
-    labId: string,
-    day: DaysWeek,
-    time: string
-  ) => Promise<void>;
-  refresh: () => Promise<void>;
-};
-
-export function useSchedule(): UseScheduleReturn {
+export function useSchedule() {
   const { data: session } = useSession();
   const [schedule, setSchedule] = useState<YearSchedule | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { loadFromStorage, saveToStorage } = useScheduleStorage();
 
-  const fetchSchedule = useCallback(async () => {
-    if (!session) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Simulação de dados - substituir por chamada API real
-      // const mockData: YearSchedule = {
-      //   [week]: {
-      //     [labId]: {
-      //       Monday: {
-      //         "09:00": {
-      //           activity: "Aula de Matemática",
-      //           user: {
-      //             email: session.user?.email || "",
-      //             name: session.user?.name || session.user?.email || "",
-      //           },
-      //           bookingTime: new Date().toISOString(),
-      //         },
-      //         "10:00": {
-      //           activity: "Pesquisa em Física",
-      //           user: {
-      //             email: session.user?.email || "",
-      //             name: session.user?.name || session.user?.email || "",
-      //           },
-      //           bookingTime: new Date().toISOString(),
-      //         },
-      //       },
-      //     },
-      //   },
-      // };
-      const storedSchedule = loadFromStorage();
-      if (storedSchedule) {
-        setSchedule(storedSchedule);
-      } else {
-        setSchedule(initializeEmptyYearSchedule());
-      }
-    } catch (err) {
-      console.error("Error fetching schedule:", err);
-      setError("Falha ao carregar agendamentos");
-      setSchedule(initializeEmptyYearSchedule());
-    } finally {
-      setLoading(false);
-    }
-  }, [loadFromStorage, session]);
-
+  // 1. Carregamento inicial do schedule
   useEffect(() => {
-    fetchSchedule();
-  }, [fetchSchedule]);
+    const loadSchedule = async () => {
+      if (!session?.user?.email) return;
 
+      setLoading(true);
+      try {
+        const storedSchedule = loadFromStorage();
+        setSchedule(storedSchedule || initializeEmptyYearSchedule());
+      } catch (err) {
+        console.error("Error loading schedule:", err);
+        setError("Failed to load schedule");
+        setSchedule(initializeEmptyYearSchedule());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSchedule();
+  }, [session?.user?.email, loadFromStorage]); // Dependências essenciais apenas
+
+  // 2. Persistência automática do schedule
+  useEffect(() => {
+    if (schedule && !loading) {
+      const prevSchedule = loadFromStorage();
+      if (JSON.stringify(prevSchedule) !== JSON.stringify(schedule)) {
+        saveToStorage(schedule);
+      }
+    }
+  }, [schedule, saveToStorage, loading, loadFromStorage]);
+
+  // 3. Função de atualização estável
   const updateSlot = useCallback(
-    async (
+    (
       weekNumber: number,
       labId: string,
       day: DaysWeek,
       time: string,
       activity?: string
     ) => {
-      if (!session?.user?.email) return;
+      setSchedule((prev) => {
+        const newSchedule = prev
+          ? structuredClone(prev)
+          : initializeEmptyYearSchedule();
 
-      try {
-        setLoading(true);
+        // Cria a estrutura se não existir
+        newSchedule[weekNumber] = newSchedule[weekNumber] || {};
+        newSchedule[weekNumber][labId] = newSchedule[weekNumber][labId] || {};
+        newSchedule[weekNumber][labId][day] =
+          newSchedule[weekNumber][labId][day] || {};
 
-        setSchedule((prevSchedule) => {
-          const currentSchedule = prevSchedule
-            ? { ...prevSchedule }
-            : initializeEmptyYearSchedule();
+        if (activity?.trim()) {
+          newSchedule[weekNumber][labId][day][time] = {
+            activity,
+            user: {
+              email: session?.user?.email || "",
+              name: session?.user?.name || session?.user?.email || "",
+            },
+            bookingTime: new Date().toISOString(),
+          };
+        } else {
+          // Remove o slot e limpa estruturas vazias
+          delete newSchedule[weekNumber][labId][day][time];
+          cleanEmptyStructures(newSchedule, weekNumber, labId, day);
+        }
 
-          // Initialize week if not exists
-          if (!currentSchedule[weekNumber]) {
-            currentSchedule[weekNumber] = {};
-          }
-
-          // Initialize lab if not exists
-          if (!currentSchedule[weekNumber][labId]) {
-            currentSchedule[weekNumber][labId] = {};
-          }
-
-          // Initialize day if not exists
-          if (!currentSchedule[weekNumber][labId][day]) {
-            currentSchedule[weekNumber][labId][day] = {};
-          }
-
-          if (activity && activity.trim()) {
-            // Update or create slot
-            currentSchedule[weekNumber][labId][day][time] = {
-              activity,
-              user: {
-                email: session?.user?.email || "",
-                name: session?.user?.name || session.user?.email || "",
-              },
-              bookingTime: new Date().toISOString(),
-            };
-
-            saveToStorage(currentSchedule);
-          } else {
-            // Clear slot
-            delete currentSchedule[weekNumber][labId][day][time];
-
-            // Clean up empty days
-            if (
-              Object.keys(currentSchedule[weekNumber][labId][day]).length === 0
-            ) {
-              delete currentSchedule[weekNumber][labId][day];
-            }
-
-            // Clean up empty labs
-            if (Object.keys(currentSchedule[weekNumber][labId]).length === 0) {
-              delete currentSchedule[weekNumber][labId];
-            }
-
-            // Clean up empty weeks
-            if (Object.keys(currentSchedule[weekNumber]).length === 0) {
-              delete currentSchedule[weekNumber];
-            }
-          }
-          saveToStorage(currentSchedule);
-
-          return currentSchedule;
-        });
-      } catch (err) {
-        console.error("Error updating slot:", err);
-        setError("Falha ao atualizar agendamento");
-      } finally {
-        setLoading(false);
-      }
+        return newSchedule;
+      });
     },
-    [session]
+    [session?.user?.email, session?.user?.name]
   );
 
+  // 4. Funções auxiliares
   const clearSlot = useCallback(
-    async (weekNumber: number, labId: string, day: DaysWeek, time: string) => {
-      await updateSlot(weekNumber, labId, day, time, "");
-    },
+    (weekNumber: number, labId: string, day: DaysWeek, time: string) =>
+      updateSlot(weekNumber, labId, day, time, ""),
     [updateSlot]
   );
 
   const refresh = useCallback(async () => {
-    await fetchSchedule();
-  }, [fetchSchedule]);
+    setLoading(true);
+    try {
+      const storedSchedule = loadFromStorage();
+      setSchedule(storedSchedule || initializeEmptyYearSchedule());
+    } finally {
+      setLoading(false);
+    }
+  }, [loadFromStorage]);
 
-  return {
-    schedule,
-    loading,
-    error,
-    updateSlot,
-    clearSlot,
-    refresh,
-  };
+  return { schedule, loading, error, updateSlot, clearSlot, refresh };
+}
+
+// Função auxiliar para limpar estruturas vazias
+function cleanEmptyStructures(
+  schedule: YearSchedule,
+  week: number,
+  labId: string,
+  day: DaysWeek
+) {
+  if (Object.keys(schedule[week][labId][day]).length === 0) {
+    delete schedule[week][labId][day];
+
+    if (Object.keys(schedule[week][labId]).length === 0) {
+      delete schedule[week][labId];
+
+      if (Object.keys(schedule[week]).length === 0) {
+        delete schedule[week];
+      }
+    }
+  }
 }
 
 function initializeEmptyYearSchedule(): YearSchedule {
   return {};
-}
-
-// Helper function to check if a slot is booked by the current user
-export function isSlotBookedByUser(
-  slot: ScheduleSlot | undefined,
-  userEmail: string
-): boolean {
-  return !!slot && slot.user.email === userEmail;
 }

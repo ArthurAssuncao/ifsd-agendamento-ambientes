@@ -69,14 +69,14 @@ export function TimeSlot({
         }
       >
         {slotData && (
-          <div className="text-sm truncate flex flex-col gap-2">
-            <span className="">Atividade: {slotData.activity}</span>
+          <div className="text-sm flex flex-col gap-2">
+            <span className="line-clamp-2">Atividade: {slotData.activity}</span>
             {slotData.user && (
-              <span className="block text-green-800">
+              <span className="block text-green-800 truncate">
                 Reserva para {slotData.user.name}
               </span>
             )}
-            <span className="block text-gray-500">
+            <span className="block text-gray-500 truncate">
               Reservado em{" "}
               {new Date(slotData.bookingTime).toLocaleDateString("pt-br", {
                 day: "numeric",
@@ -87,16 +87,18 @@ export function TimeSlot({
         )}
       </div>
 
-      <ActivityModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSelect={handleActivitySelect}
-        currentActivity={slotData?.activity || null}
-        onRemove={() => {
-          updateSlot(week, labId, day as DaysWeek, time);
-          setIsModalOpen(false);
-        }}
-      />
+      {isModalOpen && (
+        <ActivityModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSelect={handleActivitySelect}
+          currentActivity={slotData?.activity || null}
+          onRemove={() => {
+            updateSlot(week, labId, day as DaysWeek, time);
+            setIsModalOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }

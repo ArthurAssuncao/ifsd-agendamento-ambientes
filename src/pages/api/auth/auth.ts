@@ -1,72 +1,46 @@
+import jwt from "jsonwebtoken";
 import { AuthOptions } from "next-auth";
-// import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 
-// Extend the built-in session types
-// declare module "next-auth" {
-//   interface Session {
-//     accessToken?: string;
-//     refreshToken?: string;
-//   }
-// }
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    accessToken?: string;
-    refreshToken?: string;
-  }
-}
-
 export const authOptions: AuthOptions = {
-  // Configure one or more authentication providers
-  session: {
-    strategy: "jwt",
-  },
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: [
-            "https://www.googleapis.com/auth/userinfo.email",
-            "https://www.googleapis.com/auth/userinfo.profile",
-            "https://www.googleapis.com/auth/drive.file",
-          ].join(" "),
-          access_type: "offline",
           prompt: "consent",
+          access_type: "offline",
+          hd: "ifsudestemg.edu.br", // Restringe a emails @ifsudestemg.edu.br
         },
       },
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async signIn({ account, profile }) {
-      if (account?.provider === "google" && profile) {
-        // Verificação type-safe das propriedades do Google
-        const hasEmailVerified =
-          "email_verified" in profile &&
-          (profile as Record<"email_verified", unknown>).email_verified ===
-            true;
-        const hasValidEmail = profile.email?.endsWith("@ifsudestemg.edu.br");
-
-        return hasEmailVerified && Boolean(hasValidEmail);
-      }
-      return false;
+    async signIn({ profile }) {
+      // Permite apenas logins do domínio ifsudestemg.edu.br
+      return profile?.email?.endsWith("@ifsudestemg.edu.br") ?? false;
     },
-    async jwt({ token, account }) {
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-      }
+    async jwt({ token, user }) {
+      // Adiciona o ID do usuário ao token JWT
+      if (user?.id) token.id = user.id;
       return token;
     },
     async session({ session, token }) {
-      if (token.accessToken) {
-        session.accessToken = token.accessToken;
-      }
-      if (token.refreshToken) {
-        session.refreshToken = token.refreshToken;
-      }
+      // Gera um token JWT compatível com o Supabase
+      const supabaseToken = jwt.sign(
+        {
+          sub: token.sub, // ID do usuário
+          email: session.user.email,
+          aud: "authenticated",
+          exp: Math.floor(Date.now() / 1000) + 3600, // Expira em 1 hora
+          role: "authenticated",
+        },
+        process.env.SUPABASE_JWT_SECRET! // Encontre em Project Settings > API no Supabase
+      );
+
+      session.supabaseAccessToken = supabaseToken;
       return session;
     },
   },

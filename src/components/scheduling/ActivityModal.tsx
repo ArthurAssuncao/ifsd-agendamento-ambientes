@@ -1,7 +1,7 @@
 import { useUserActivities } from "@/hooks/useUserActivities";
 import Button from "@/ui/Button";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { IoMdCloseCircleOutline } from "react-icons/io";
 
 type ActivityModalProps = {
@@ -12,13 +12,13 @@ type ActivityModalProps = {
   currentActivity: string | null;
 };
 
-export function ActivityModal({
+const ActivityModalIntern = ({
   isOpen,
   onClose,
   onSelect,
   onRemove,
   currentActivity,
-}: ActivityModalProps) {
+}: ActivityModalProps) => {
   const { data: session } = useSession();
   const { activities, loading, error, addActivity } = useUserActivities();
   const [customActivity, setCustomActivity] = useState("");
@@ -127,4 +127,8 @@ export function ActivityModal({
       </div>
     </div>
   );
-}
+};
+
+const ActivityModal = React.memo(ActivityModalIntern);
+
+export { ActivityModal };

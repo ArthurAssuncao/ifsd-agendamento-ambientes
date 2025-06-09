@@ -1,6 +1,7 @@
 // pages/index.js
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ListActivities } from "@/components/ListActivities/ListActivities";
 import { LoginPage } from "@/components/LoginPage/LoginPage";
 import { NavBar } from "@/components/NavBar";
 import { TimeTable } from "@/components/scheduling/TimeTable";
@@ -128,6 +129,8 @@ export default function Home() {
         </div>
         <TimeTable labId={currentLab} week={currentWeek} />
       </main>
+
+      <ListActivities />
 
       <StatusBar />
 

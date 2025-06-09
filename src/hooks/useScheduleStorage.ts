@@ -1,9 +1,10 @@
 import { WeekSchedule, YearSchedule } from "@/types";
+import { useCallback } from "react";
 
 export const useScheduleStorage = () => {
   const storageKey = "scheduleTableData";
 
-  const loadFromStorage = (): YearSchedule | null => {
+  const loadFromStorage = useCallback(() => {
     try {
       const data = localStorage.getItem(storageKey);
       return data ? JSON.parse(data) : null;
@@ -11,15 +12,15 @@ export const useScheduleStorage = () => {
       console.error("Erro ao carregar dados:", error);
       return null;
     }
-  };
+  }, []);
 
-  const saveToStorage = (data: YearSchedule) => {
+  const saveToStorage = useCallback((data: YearSchedule) => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(data));
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
     }
-  };
+  }, []);
 
   return { loadFromStorage, saveToStorage };
 };

@@ -3,11 +3,15 @@ export type User = {
   name: string;
 };
 
-export type ScheduleSlot = {
+export interface ScheduleSlot {
   activity: string;
-  user: User;
+  user: {
+    email: string;
+    name: string;
+  };
   bookingTime: string;
-};
+  details?: string; // Adicione esta linha
+}
 
 export type Lab = {
   id: string;
