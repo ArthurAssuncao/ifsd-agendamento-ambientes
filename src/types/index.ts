@@ -10,7 +10,8 @@ export interface ScheduleSlot {
     name: string;
   };
   bookingTime: string;
-  details?: string; // Adicione esta linha
+  details?: string;
+  dbSynced?: boolean;
 }
 
 export type Lab = {
@@ -41,7 +42,13 @@ export type DaysWeek =
   | "Thursday"
   | "Friday"
   | "Saturday"
-  | "Sunday";
+  | "Sunday"
+  | "Segunda"
+  | "Terça"
+  | "Quarta"
+  | "Quinta"
+  | "Sexta"
+  | "Sábado";
 
 export type YearSchedule = {
   [week: number]: {

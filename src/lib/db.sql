@@ -18,29 +18,65 @@ CREATE TABLE IF NOT EXISTS environment_schedule (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+ALTER TABLE environment_schedule
+ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+ALTER TABLE environment_schedule
+ADD CONSTRAINT unique_booking UNIQUE (environment_id, week_number, day_of_week, time_slot, user_email);
+
 -- Ativar Row Level Security
 ALTER TABLE environment_schedule ENABLE ROW LEVEL SECURITY;
 
 -- Criar políticas de acesso
-CREATE POLICY "schedule_select_policy" 
+CREATE POLICY "allow_access_by_email" 
 ON environment_schedule
+FOR ALL
+USING (auth.jwt() ->> 'email' = user_email)
+WITH CHECK (auth.jwt() ->> 'email' = user_email);
+
+-- Política de leitura (usuário vê apenas seus agendamentos ou é admin)
+CREATE POLICY schedule_select_policy ON environment_schedule
 FOR SELECT USING (
-  auth.uid() = user_id OR
+  auth.jwt() ->> 'email' = user_email OR
   auth.jwt() ->> 'role' = 'admin'
 );
 
-CREATE POLICY "schedule_insert_policy"
-ON environment_schedule
+-- Política de inserção (usuário só pode inserir com seu próprio email)
+CREATE POLICY schedule_insert_policy ON environment_schedule
 FOR INSERT WITH CHECK (
-  auth.uid() = user_id
+  auth.jwt() ->> 'email' = user_email
 );
 
-CREATE POLICY "schedule_update_policy"
-ON environment_schedule
+-- Política de atualização (usuário só pode atualizar seus agendamentos)
+CREATE POLICY schedule_update_policy ON environment_schedule
 FOR UPDATE USING (
-  auth.uid() = user_id
+  auth.jwt() ->> 'email' = user_email
 ) WITH CHECK (
-  auth.uid() = user_id
+  auth.jwt() ->> 'email' = user_email
+);
+
+-- Política de deleção (usuário ou admin)
+CREATE POLICY allow_delete_to_owner_or_admin ON environment_schedule
+FOR DELETE USING (
+  auth.jwt() ->> 'email' = user_email OR
+  auth.jwt() ->> 'role' = 'admin'
+);
+
+CREATE POLICY "allow_insert_to_owner_email" 
+ON environment_schedule
+FOR INSERT
+WITH CHECK (
+  auth.jwt() ->> 'email' = user_email
+);
+
+CREATE POLICY "allow_update_to_owner_email"
+ON environment_schedule
+FOR UPDATE
+USING (
+  auth.jwt() ->> 'email' = user_email
+)
+WITH CHECK (
+  auth.jwt() ->> 'email' = user_email
 );
 
 -- Índices para melhorar performance
@@ -176,3 +212,12 @@ UPDATE staff_activities sa
 SET user_id = u.id
 FROM auth.users u
 WHERE sa.email = u.email;
+
+
+CREATE OR REPLACE FUNCTION update_env_schedule_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;

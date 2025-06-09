@@ -34,7 +34,7 @@ const getSlotClasses = (period: string) => {
 
 export function TimeTable({ labId, week }: TimeTableProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
-  const { updateSlot } = useSchedule();
+  const { updateSlot } = useSchedule(true);
 
   const closeContextMenu = () => {
     setContextMenu(null);

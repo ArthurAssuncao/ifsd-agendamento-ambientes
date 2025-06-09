@@ -16,6 +16,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { FaChevronCircleLeft, FaChevronCircleRight } from "react-icons/fa";
+import { ToastContainer } from "react-toastify";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -99,7 +100,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col items-center gap-2 pt-2 w-[340px]">
             <span>
-              Semana do dia{" "}
+              Semana {currentWeek} do dia{" "}
               {getDateFromWeek(currentWeek).toLocaleDateString(
                 "pt-br",
                 optionsDateFormat
@@ -133,6 +134,18 @@ export default function Home() {
       <ListActivities />
 
       <StatusBar />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
       {/* Rodapé */}
       <Footer />

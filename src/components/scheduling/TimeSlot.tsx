@@ -1,6 +1,9 @@
 import { useSchedule } from "@/hooks/useSchedule";
+import { DAYS_OF_WEEK_TO_ENGLISH } from "@/lib/utils";
 import { DaysWeek, ScheduleSlot } from "@/types";
 import { MouseEvent, useState } from "react";
+import { MdSyncProblem } from "react-icons/md";
+import { toast } from "react-toastify";
 import { ContextMenuData } from "../ContextMenu.jsx/ContextMenu.jsx";
 import { ActivityModal } from "./ActivityModal";
 
@@ -21,13 +24,13 @@ export function TimeSlot({
   className,
   setContextMenu,
 }: TimeSlotProps) {
-  const { schedule, updateSlot } = useSchedule();
+  const { schedule, updateSlot } = useSchedule(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
 
-  const slotData = schedule?.[week]?.[labId]?.[day]?.[time] as
-    | ScheduleSlot
-    | undefined;
+  const slotData = schedule?.[week]?.[labId]?.[DAYS_OF_WEEK_TO_ENGLISH[day]]?.[
+    time
+  ] as ScheduleSlot | undefined;
 
   const handleSlotClick = () => {
     setIsModalOpen(true);
@@ -57,6 +60,14 @@ export function TimeSlot({
     });
   };
 
+  const handleSyncError = (e: MouseEvent<HTMLSpanElement>) => {
+    e.stopPropagation();
+    // Aqui você pode implementar a lógica para lidar com o erro de sincronização
+    toast("Sincronização falhou. Por favor, tente novamente.", {
+      type: "error",
+    });
+  };
+
   return (
     <>
       <div
@@ -69,7 +80,7 @@ export function TimeSlot({
         }
       >
         {slotData && (
-          <div className="text-sm flex flex-col gap-2">
+          <div className="text-sm flex flex-col gap-2 relative">
             <span className="line-clamp-2">Atividade: {slotData.activity}</span>
             {slotData.user && (
               <span className="block text-green-800 truncate">
@@ -83,6 +94,20 @@ export function TimeSlot({
                 month: "numeric",
               })}
             </span>
+            {slotData.details && (
+              <span className="text-xs text-gray-600">
+                Detalhes: {slotData.details}
+              </span>
+            )}
+            {!slotData.dbSynced && (
+              <span
+                className="text-xs text-red-600 absolute top-[-8] right-[-8] hover:text-red-800 transition"
+                onClick={handleSyncError}
+              >
+                <span className="sr-only">Erro de sincronização</span>
+                <MdSyncProblem size={24} />
+              </span>
+            )}
           </div>
         )}
       </div>

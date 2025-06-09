@@ -4,6 +4,32 @@ import { useCallback } from "react";
 export const useScheduleStorage = () => {
   const storageKey = "scheduleTableData";
 
+  const syncDbKey = "syncDbScheduleData";
+
+  const whenSyncDb = useCallback(() => {
+    try {
+      const data = localStorage.getItem(syncDbKey);
+      if (data) {
+        const timestamp = JSON.parse(data);
+        console.log("DB está sincronizado:", timestamp);
+        return timestamp;
+      }
+      return null;
+    } catch (error) {
+      console.error("Erro ao sincronizar dados com o DB:", error);
+      return null;
+    }
+  }, []);
+
+  const saveWhenSyncDb = useCallback((syncTimestamp: number) => {
+    try {
+      localStorage.setItem(syncDbKey, JSON.stringify(syncTimestamp));
+      console.log("Dados salvos para sincronização com o DB?", syncTimestamp);
+    } catch (error) {
+      console.error("Erro ao salvar dados para sincronização com o DB:", error);
+    }
+  }, []);
+
   const loadFromStorage = useCallback(() => {
     try {
       const data = localStorage.getItem(storageKey);
@@ -22,7 +48,7 @@ export const useScheduleStorage = () => {
     }
   }, []);
 
-  return { loadFromStorage, saveToStorage };
+  return { loadFromStorage, saveToStorage, whenSyncDb, saveWhenSyncDb };
 };
 
 export function generateScheduleTableData(

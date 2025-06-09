@@ -7,6 +7,38 @@ export const daysOfWeek = [
   "Sábado",
 ];
 
+export const DAYS_OF_WEEK_TO_ENGLISH: { [key: string]: string } = {
+  Segunda: "Monday",
+  Terça: "Tuesday",
+  Quarta: "Wednesday",
+  Quinta: "Thursday",
+  Sexta: "Friday",
+  Sábado: "Saturday",
+};
+
+export const DAYS_OF_WEEK_TO_PORTUGUESE: { [key: string]: string } = {
+  Monday: "Segunda",
+  Tuesday: "Terça",
+  Wednesday: "Quarta",
+  Thursday: "Quinta",
+  Friday: "Sexta",
+  Saturday: "Sábado",
+};
+
+export function checkMinutePassed(timestamp: number, minutes = 1) {
+  const storedTime = timestamp;
+
+  if (!storedTime) {
+    return false; // Não existe timestamp armazenado
+  }
+
+  const currentTime = new Date().getTime();
+  const timeDifference = currentTime - storedTime;
+  const minuteMili = minutes * 60 * 10000;
+
+  return timeDifference >= minuteMili;
+}
+
 export const timeSlots = [
   // Manhã
   { time: "07:45", period: "morning" },
