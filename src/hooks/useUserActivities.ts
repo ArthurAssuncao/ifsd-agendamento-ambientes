@@ -103,7 +103,7 @@ export function useUserActivities() {
     return () => {
       isMounted = false;
     };
-  }, [supabase]); // Dependência: apenas `supabase` (deve ser estável)
+  }, [loadFromStorage, saveToStorage, supabase]); // Dependência: apenas `supabase` (deve ser estável)
 
   const addActivity = (newActivity: string) => {
     setActivities((prev) => {

@@ -1,6 +1,7 @@
 import ifLogoWite from "@/assets/img/if-white.svg";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 
 export function NavBar() {
   const { data: session, status } = useSession();
@@ -39,12 +40,12 @@ export function NavBar() {
             <span className="">
               Bem-vindo, {session?.user?.name || "Usuário"}
             </span>
-            <a
+            <Link
               href="/api/auth/signout"
               className="hover:text-green-200 transition"
             >
               Sair
-            </a>
+            </Link>
           </div>
         ) : null}
       </div>

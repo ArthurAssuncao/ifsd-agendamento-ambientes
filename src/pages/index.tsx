@@ -20,7 +20,7 @@ import { ToastContainer } from "react-toastify";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [currentLab, setCurrentLab] = useState<string>("LabInf1");
+  const [currentLab] = useState<string>("LabInf1"); //setCurrentLab
 
   const currentWeekNumber = getWeekNumber(new Date());
 
