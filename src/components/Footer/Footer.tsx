@@ -9,6 +9,9 @@ export function Footer() {
           © {new Date().getFullYear()} IFSudesteMG Campus Santos Dumont - Todos
           os direitos reservados
         </p>
+        <p className="mt-2 text-sm text-green-200">
+          Criado por Arthur Assuncao
+        </p>
       </div>
     </footer>
   );
