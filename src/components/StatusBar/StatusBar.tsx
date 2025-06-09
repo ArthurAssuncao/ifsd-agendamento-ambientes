@@ -1,11 +1,23 @@
+import { lastVersion } from "@/lib/version";
 import { useSession } from "next-auth/react";
+import { useState } from "react";
 
 export function StatusBar() {
   const { data: session, status } = useSession();
+  const [version, setVersion] = useState<string>();
 
   if (!session || status !== "authenticated") {
     return null; // Don't render the status bar if not authenticated
   }
+
+  lastVersion()
+    .then((v: string) => {
+      setVersion(v);
+    })
+    .catch((error) => {
+      console.error("Erro ao obter a versão:", error);
+      setVersion("1.0.0");
+    });
 
   return (
     <div className="flex items-center justify-between bg-gray-800 p-4 text-white w-full">
@@ -21,6 +33,7 @@ export function StatusBar() {
         <span className="text-sm">
           Last updated: {new Date().toLocaleTimeString("pt-BR")}
         </span>
+        <span className="text-sm">Versão: {version}</span>
       </div>
     </div>
   );
