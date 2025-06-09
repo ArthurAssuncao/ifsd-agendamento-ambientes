@@ -1,6 +1,6 @@
-import { useSchedule } from "@/hooks/useSchedule";
 import { DAYS_OF_WEEK_TO_ENGLISH } from "@/lib/utils";
-import { DaysWeek, ScheduleSlot } from "@/types";
+import { DaysWeek, ScheduleSlot, YearSchedule } from "@/types";
+import { UpdateSlotFunction } from "@/types/useSchedule.js";
 import { MouseEvent, useState } from "react";
 import { MdSyncProblem } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -14,6 +14,8 @@ type TimeSlotProps = {
   week: number;
   className?: string;
   setContextMenu: (data: ContextMenuData | null) => void;
+  schedule: YearSchedule | null;
+  updateSlot: UpdateSlotFunction;
 };
 
 export function TimeSlot({
@@ -23,8 +25,9 @@ export function TimeSlot({
   week,
   className,
   setContextMenu,
+  schedule,
+  updateSlot,
 }: TimeSlotProps) {
-  const { schedule, updateSlot } = useSchedule(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   // const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
 

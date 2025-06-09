@@ -34,7 +34,7 @@ const getSlotClasses = (period: string) => {
 
 export function TimeTable({ labId, week }: TimeTableProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
-  const { updateSlot } = useSchedule(true);
+  const { schedule, updateSlot } = useSchedule(true);
 
   const closeContextMenu = () => {
     setContextMenu(null);
@@ -125,6 +125,8 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                     week={week}
                     className={`border-r border-gray-300 last-of-type:border-r-0 ${classes.slotCell}`}
                     setContextMenu={setContextMenu}
+                    schedule={schedule}
+                    updateSlot={updateSlot}
                   />
                 ))}
               </div>

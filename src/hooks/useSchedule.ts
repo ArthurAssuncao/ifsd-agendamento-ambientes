@@ -1,37 +1,59 @@
-import { useSupabase } from "@/lib/supabaseClient";
+// Tipos importados (assumindo que existem em @/types)
+import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
 import { checkMinutePassed, DAYS_OF_WEEK_TO_ENGLISH } from "@/lib/utils";
 import { DaysWeek, ScheduleSlot, YearSchedule } from "@/types";
+import {
+  CleanEmptyStructuresFunction,
+  ClearSlotFunction,
+  DatabaseScheduleItem,
+  InitializeEmptyYearScheduleFunction,
+  RefreshFunction,
+  SupabaseDeleteMatch,
+  SupabaseUpsertData,
+  SyncSlotFunction,
+  UpdateSlotFunction,
+  UseScheduleHook,
+  UseScheduleReturn,
+} from "@/types/useSchedule";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { useScheduleStorage } from "./useScheduleStorage";
 
-export function useSchedule(sync: boolean) {
+// Implementação do hook useSchedule
+export const useSchedule: UseScheduleHook = (
+  sync: boolean
+): UseScheduleReturn => {
   const { data: session } = useSession();
   const [schedule, setSchedule] = useState<YearSchedule | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { loadFromStorage, saveToStorage, saveWhenSyncDb, whenSyncDb } =
     useScheduleStorage();
   const supabase = useSupabase();
+  const { executeWithLock } = useSupabaseWithLock();
 
   // 1. Carregamento inicial do schedule
   useEffect(() => {
-    const loadSchedule = async () => {
+    const loadSchedule = async (): Promise<void> => {
       if (!session?.user?.email) return;
 
       setLoading(true);
       try {
         // Tenta carregar do Supabase
-        const { data, error } = await supabase
-          .from("environment_schedule")
-          .select("*")
-          .eq("user_email", session.user.email);
+        const result = await executeWithLock(async (client) => {
+          return await client
+            .from("environment_schedule")
+            .select("*")
+            .eq("user_email", session.user.email);
+        });
+
+        const { data, error } = result;
 
         if (error) throw error;
 
         if (data?.length) {
           const dbSchedule: YearSchedule = {};
-          data.forEach((item) => {
+          data.forEach((item: DatabaseScheduleItem) => {
             dbSchedule[item.week_number] = dbSchedule[item.week_number] || {};
             dbSchedule[item.week_number][item.environment_id] =
               dbSchedule[item.week_number][item.environment_id] || {};
@@ -63,21 +85,21 @@ export function useSchedule(sync: boolean) {
           saveWhenSyncDb(new Date().getTime());
         } else {
           // Fallback para localStorage
-          const storedSchedule = loadFromStorage();
+          const storedSchedule: YearSchedule = loadFromStorage();
           setSchedule(storedSchedule || initializeEmptyYearSchedule());
         }
       } catch (err) {
         console.error("Error loading schedule:", err);
         setError("Failed to load schedule");
         // Fallback para localStorage
-        const storedSchedule = loadFromStorage();
+        const storedSchedule: YearSchedule = loadFromStorage();
         setSchedule(storedSchedule || initializeEmptyYearSchedule());
       } finally {
         setLoading(false);
       }
     };
 
-    const whenSyncedDb = whenSyncDb();
+    const whenSyncedDb: number | null = whenSyncDb();
 
     if (!whenSyncedDb || (sync && checkMinutePassed(whenSyncedDb))) {
       loadSchedule();
@@ -100,43 +122,24 @@ export function useSchedule(sync: boolean) {
     sync,
   ]);
 
-  //   const loadSchedule = async () => {
-  //     if (!session?.user?.email) return;
-
-  //     setLoading(true);
-  //     try {
-  //       const storedSchedule = loadFromStorage();
-  //       setSchedule(storedSchedule || initializeEmptyYearSchedule());
-  //     } catch (err) {
-  //       console.error("Error loading schedule:", err);
-  //       setError("Failed to load schedule");
-  //       setSchedule(initializeEmptyYearSchedule());
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   loadSchedule();
-  // }, [session?.user?.email, loadFromStorage]); // Dependências essenciais apenas
-
   // 2. Persistência automática do schedule
   useEffect(() => {
     if (schedule && !loading) {
-      const prevSchedule = loadFromStorage();
+      const prevSchedule: YearSchedule = loadFromStorage();
       if (JSON.stringify(prevSchedule) !== JSON.stringify(schedule)) {
         saveToStorage(schedule);
       }
     }
   }, [schedule, saveToStorage, loading, loadFromStorage]);
 
-  const syncSlot = useCallback(
+  const syncSlot: SyncSlotFunction = useCallback(
     async (
       weekNumber: number,
       labId: string,
       day: DaysWeek,
       time: string,
       slot: ScheduleSlot | null
-    ) => {
+    ): Promise<void> => {
       if (!session?.user?.email || !supabase) return;
 
       const dayEnglish = DAYS_OF_WEEK_TO_ENGLISH[day];
@@ -148,29 +151,29 @@ export function useSchedule(sync: boolean) {
       try {
         if (slot) {
           // Upsert (insere ou atualiza)
-          const { error } = await supabase.from("environment_schedule").upsert(
-            {
-              environment_id: labId,
-              week_number: weekNumber,
-              day_of_week: dayEnglish,
-              time_slot: time,
-              activity_name: slot.activity,
-              user_email: session.user.email,
-              booking_time: slot.bookingTime,
-              details: slot.details || null,
-            },
-            {
+          const upsertData: SupabaseUpsertData = {
+            environment_id: labId,
+            week_number: weekNumber,
+            day_of_week: dayEnglish,
+            time_slot: time,
+            activity_name: slot.activity,
+            user_email: session.user.email,
+            booking_time: slot.bookingTime,
+            details: slot.details || null,
+          };
+
+          const { error } = await supabase
+            .from("environment_schedule")
+            .upsert(upsertData, {
               onConflict:
                 "environment_id,week_number,day_of_week,time_slot,user_email",
-            }
-          );
+            });
 
           if (error) throw error;
 
           // Atualiza o slot localmente para marcar como sincronizado
-
-          setSchedule((prev) => {
-            const newSchedule = prev
+          setSchedule((prev: YearSchedule | null) => {
+            const newSchedule: YearSchedule = prev
               ? structuredClone(prev)
               : initializeEmptyYearSchedule();
             newSchedule[weekNumber] = newSchedule[weekNumber] || {};
@@ -186,16 +189,18 @@ export function useSchedule(sync: boolean) {
           });
         } else {
           // Remove slot se existir
+          const deleteMatch: SupabaseDeleteMatch = {
+            environment_id: labId,
+            week_number: weekNumber,
+            day_of_week: DAYS_OF_WEEK_TO_ENGLISH[day],
+            time_slot: time,
+            user_email: session.user.email,
+          };
+
           const { error } = await supabase
             .from("environment_schedule")
             .delete()
-            .match({
-              environment_id: labId,
-              week_number: weekNumber,
-              day_of_week: DAYS_OF_WEEK_TO_ENGLISH[day],
-              time_slot: time,
-              user_email: session.user.email,
-            });
+            .match(deleteMatch);
 
           if (error) throw error;
         }
@@ -208,21 +213,21 @@ export function useSchedule(sync: boolean) {
   );
 
   // 3. Função de atualização estável
-  const updateSlot = useCallback(
+  const updateSlot: UpdateSlotFunction = useCallback(
     (
       weekNumber: number,
       labId: string,
       day: DaysWeek,
       time: string,
       activity?: string
-    ) => {
-      setSchedule((prev) => {
-        const newSchedule = prev
+    ): void => {
+      setSchedule((prev: YearSchedule | null) => {
+        const newSchedule: YearSchedule = prev
           ? structuredClone(prev)
           : initializeEmptyYearSchedule();
 
         if (activity?.trim()) {
-          const newSlot = {
+          const newSlot: ScheduleSlot = {
             activity,
             user: {
               email: session?.user?.email || "",
@@ -256,16 +261,16 @@ export function useSchedule(sync: boolean) {
   );
 
   // 4. Funções auxiliares
-  const clearSlot = useCallback(
-    (weekNumber: number, labId: string, day: DaysWeek, time: string) =>
+  const clearSlot: ClearSlotFunction = useCallback(
+    (weekNumber: number, labId: string, day: DaysWeek, time: string): void =>
       updateSlot(weekNumber, labId, day, time, ""),
     [updateSlot]
   );
 
-  const refresh = useCallback(async () => {
+  const refresh: RefreshFunction = useCallback(async (): Promise<void> => {
     setLoading(true);
     try {
-      const storedSchedule = loadFromStorage();
+      const storedSchedule: YearSchedule = loadFromStorage();
       setSchedule(storedSchedule || initializeEmptyYearSchedule());
     } finally {
       setLoading(false);
@@ -273,15 +278,15 @@ export function useSchedule(sync: boolean) {
   }, [loadFromStorage]);
 
   return { schedule, loading, error, updateSlot, clearSlot, refresh };
-}
+};
 
 // Função auxiliar para limpar estruturas vazias
-function cleanEmptyStructures(
+const cleanEmptyStructures: CleanEmptyStructuresFunction = (
   schedule: YearSchedule,
   week: number,
   labId: string,
   day: DaysWeek
-) {
+): void => {
   if (Object.keys(schedule[week][labId][day]).length === 0) {
     delete schedule[week][labId][day];
 
@@ -293,8 +298,9 @@ function cleanEmptyStructures(
       }
     }
   }
-}
+};
 
-function initializeEmptyYearSchedule(): YearSchedule {
-  return {};
-}
+const initializeEmptyYearSchedule: InitializeEmptyYearScheduleFunction =
+  (): YearSchedule => {
+    return {};
+  };

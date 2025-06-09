@@ -1,4 +1,4 @@
-import { useSupabase } from "@/lib/supabaseClient";
+import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { useUserActivitiesStorage } from "./useUserActivitiesStorage";
@@ -10,6 +10,7 @@ export function useUserActivities() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { loadFromStorage, saveToStorage } = useUserActivitiesStorage();
+  const { executeWithLock } = useSupabaseWithLock();
 
   // Usamos ref para valores mutáveis que não devem disparar recriações
   const sessionRef = useRef(session);
@@ -31,11 +32,21 @@ export function useUserActivities() {
       try {
         if (isMounted) setLoading(true);
 
-        const { data, error } = await supabase
-          .from("staff_activities")
-          .select("subjects")
-          .eq("email", sessionRef.current.user.email)
-          .maybeSingle();
+        // const { data, error } = await supabase
+        //   .from("staff_activities")
+        //   .select("subjects")
+        //   .eq("email", sessionRef.current.user.email)
+        //   .maybeSingle();
+
+        const result = await executeWithLock(async (client) => {
+          return await client
+            .from("staff_activities")
+            .select("subjects")
+            .eq("email", sessionRef?.current?.user.email)
+            .maybeSingle();
+        });
+
+        const { data, error } = result;
 
         if (!isMounted) return;
 
