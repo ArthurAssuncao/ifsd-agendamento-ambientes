@@ -1,5 +1,9 @@
 import { useEmailColors } from "@/hooks/useEmailColors";
-import { EMAIL_SCHEDULE_COMISSION } from "@/lib/constants";
+import {
+  COLOR_DISABLED_SLOT,
+  EMAIL_SCHEDULE_COMISSION,
+  MINUTES_PER_SLOT,
+} from "@/lib/constants";
 import { DaysWeek, ScheduleSlot } from "@/types";
 import { UpdateSlotFunction } from "@/types/useSchedule";
 import { isEqual } from "lodash";
@@ -19,6 +23,11 @@ type TimeSlotProps = {
   scheduleSlot?: ScheduleSlot;
   updateSlot: UpdateSlotFunction;
   disabled: boolean;
+  mergeTop?: boolean;
+  mergeBottom?: boolean;
+  groupHeight?: number;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
 };
 
 export const TimeSlot = React.memo(
@@ -32,14 +41,20 @@ export const TimeSlot = React.memo(
     scheduleSlot,
     updateSlot,
     disabled,
+    mergeTop = false,
+    mergeBottom = false,
+    groupHeight = 1,
+    isFirstInGroup = true,
+    isLastInGroup = true,
   }: TimeSlotProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { getEmailColor } = useEmailColors();
     const [isHovered, setIsHovered] = useState(false);
-    // const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
 
     const handleSlotClick = () => {
-      setIsModalOpen(true);
+      if (!disabled && scheduleSlot?.user?.email !== EMAIL_SCHEDULE_COMISSION) {
+        setIsModalOpen(true);
+      }
     };
 
     const handleActivitySelect = (activity: string) => {
@@ -47,106 +62,171 @@ export const TimeSlot = React.memo(
       setIsModalOpen(false);
     };
 
-    const handleContextMenu = (
-      e: MouseEvent<HTMLDivElement>,
-      week: number,
-      labId: string,
-
-      day: DaysWeek,
-      time: string
-    ) => {
-      e.preventDefault();
-      setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
-        week,
-        labId,
-        day,
-        time,
-      });
+    const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
+      e.stopPropagation();
+      console.log("Schedule slot context menu clicked", scheduleSlot);
+      if (!disabled && scheduleSlot?.user?.email !== EMAIL_SCHEDULE_COMISSION) {
+        e.preventDefault();
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          week,
+          labId,
+          day: day as DaysWeek,
+          time,
+        });
+      }
     };
 
     const handleSyncError = (e: MouseEvent<HTMLSpanElement>) => {
       e.stopPropagation();
-      // Aqui você pode implementar a lógica para lidar com o erro de sincronização
       toast("Sincronização falhou. Por favor, tente novamente.", {
         type: "error",
       });
     };
 
-    let colorSlot = "#f9fafb";
-    if (scheduleSlot) {
-      colorSlot =
-        scheduleSlot?.user?.email != EMAIL_SCHEDULE_COMISSION
-          ? `${getEmailColor(scheduleSlot?.user?.email).toLowerCase()}`
-          : "#f3f4f6";
+    const calculateColor = () => {
+      if (!scheduleSlot) return "#f9fafb";
+      return scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION
+        ? `${getEmailColor(scheduleSlot.user?.email).toLowerCase()}`
+        : "#f3f4f6";
+    };
+
+    const colorSlot = calculateColor();
+    const showContent = isFirstInGroup || groupHeight === 1;
+    const minutesGroupSlots = groupHeight * MINUTES_PER_SLOT;
+    const backgroundColor =
+      isHovered && !disabled
+        ? "#dcfce7"
+        : disabled
+        ? COLOR_DISABLED_SLOT
+        : colorSlot;
+
+    let scheduleSlotClass;
+    let scheduleSlotTeacher;
+    if (
+      scheduleSlot?.details &&
+      scheduleSlot?.user?.email === EMAIL_SCHEDULE_COMISSION
+    ) {
+      const scheduleSlotDetailsParts = scheduleSlot.details
+        .replace(" (", ";")
+        .replace(")", "")
+        .split(";");
+      if (scheduleSlotDetailsParts.length >= 2) {
+        scheduleSlotClass = scheduleSlotDetailsParts[0]?.trim();
+        scheduleSlotTeacher = scheduleSlotDetailsParts[1]?.trim();
+      }
     }
 
     return (
       <>
         <div
-          className={`pr-4 pl-4 ${
-            scheduleSlot ? `bg-[${colorSlot}]` : `bg-[${colorSlot}]`
+          className={` flex relative transition-colors duration-200 ${
+            mergeTop ? "border border-transparent" : "border-t border-gray-200"
           } ${
-            !disabled ? `cursor-pointer hover:bg-green-100` : ``
-          }  ${className}`}
-          style={
-            !disabled && !isHovered
-              ? {
-                  backgroundColor: colorSlot,
-                  transition: "background-color 0.3s",
-                }
-              : { backgroundColor: ` ${!disabled ? "#dcfce7" : "#99a1af"}` }
-          }
+            mergeBottom
+              ? "border border-transparent"
+              : "border-b border-gray-200"
+          } 
+            
+          ${className}`}
+          style={{
+            height: `${groupHeight * 64}px`,
+            backgroundColor: backgroundColor,
+            zIndex: isHovered ? 10 : 1,
+            cursor: disabled ? "not-allowed" : "pointer",
+            pointerEvents: disabled ? "none" : "auto",
+            opacity: disabled ? 0.5 : 1,
+          }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={
-            !disabled && scheduleSlot?.user?.email != EMAIL_SCHEDULE_COMISSION
-              ? handleSlotClick
-              : () => {}
-          }
-          onContextMenu={
-            !disabled && scheduleSlot?.user?.email != EMAIL_SCHEDULE_COMISSION
-              ? (e) => handleContextMenu(e, week, labId, day as DaysWeek, time)
-              : () => {}
-          }
+          onClick={handleSlotClick}
+          onContextMenu={handleContextMenu}
         >
-          {scheduleSlot && (
-            <div className="text-sm flex flex-col gap-2 relative h-full justify-between select-none">
-              <span className="line-clamp-2">{scheduleSlot.activity}</span>
-              {scheduleSlot.user &&
-                scheduleSlot.user.email != EMAIL_SCHEDULE_COMISSION && (
-                  <span className="block text-green-800 truncate text-xs">
-                    Reserva para {scheduleSlot.user.name}
-                  </span>
+          {scheduleSlot && showContent && (
+            <div className="absolute inset-0 p-2 flex flex-col justify-around select-none">
+              <div
+                className={`flex flex-col ${
+                  groupHeight > 1 ? "gap-2" : ""
+                } m-auto`}
+              >
+                <div
+                  className={`text-sm ${
+                    groupHeight > 1
+                      ? "line-clamp-2"
+                      : "line-clamp-1 text-ellipsis"
+                  }`}
+                >
+                  {scheduleSlot.activity}
+                </div>
+
+                {scheduleSlot.details && (
+                  <div
+                    className={`text-xs ${
+                      groupHeight > 1
+                        ? "line-clamp-2"
+                        : "line-clamp-1 text-ellipsis"
+                    }`}
+                  >
+                    {scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION ? (
+                      scheduleSlot.details
+                    ) : (
+                      <>
+                        <span className="flex justify-center">
+                          {scheduleSlotClass}
+                        </span>
+                        <span className="flex justify-center">
+                          {scheduleSlotTeacher}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
-              {scheduleSlot.user.email != EMAIL_SCHEDULE_COMISSION && (
-                <span className="block text-gray-500 truncate text-xs">
-                  Reservado em{" "}
-                  {new Date(scheduleSlot.bookingTime).toLocaleDateString(
-                    "pt-br",
-                    {
-                      day: "numeric",
-                      month: "numeric",
-                    }
-                  )}
-                </span>
+              </div>
+
+              {scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION && (
+                <div className="text-xs text-green-800 truncate">
+                  {scheduleSlot.user?.name}
+                </div>
               )}
-              {scheduleSlot.details && (
-                <span className="text-xs text-gray-600">
-                  {scheduleSlot.details}
-                </span>
-              )}
+
+              {scheduleSlot.user.email !== EMAIL_SCHEDULE_COMISSION &&
+                scheduleSlot.bookingTime && (
+                  <div className="text-xs text-gray-500 mt-1 justify-end">
+                    Reserva realizada em{" "}
+                    {new Date(scheduleSlot.bookingTime).toLocaleDateString(
+                      "pt-br",
+                      {
+                        day: "numeric",
+                        month: "numeric",
+                      }
+                    )}
+                  </div>
+                )}
+
               {!scheduleSlot.dbSynced && (
-                <span
-                  className="text-xs text-red-600 absolute top-[-8] right-[-8] hover:text-red-800 transition"
+                <div
+                  className="absolute top-1 right-1 text-red-600 hover:text-red-800"
                   onClick={handleSyncError}
                 >
-                  <span className="sr-only">Erro de sincronização</span>
-                  <MdSyncProblem size={24} />
-                </span>
+                  <MdSyncProblem size={18} />
+                </div>
+              )}
+
+              {groupHeight > 1 && isLastInGroup && (
+                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                  {`${
+                    minutesGroupSlots >= 60
+                      ? Math.floor(minutesGroupSlots / 60) + "h"
+                      : ""
+                  }${minutesGroupSlots % 60}min`}
+                </div>
               )}
             </div>
+          )}
+
+          {isHovered && !disabled && (
+            <div className="absolute inset-0 border-2 border-blue-400 pointer-events-none" />
           )}
         </div>
 
@@ -173,9 +253,12 @@ export const TimeSlot = React.memo(
         prevProps.time === nextProps.time &&
         prevProps.labId === nextProps.labId &&
         prevProps.week === nextProps.week &&
+        prevProps.mergeTop === nextProps.mergeTop &&
+        prevProps.mergeBottom === nextProps.mergeBottom &&
+        prevProps.groupHeight === nextProps.groupHeight &&
         isEqual(prevProps.scheduleSlot, nextProps.scheduleSlot))
     );
   }
 );
 
-TimeSlot.displayName = "TimeSlot"; // Necessário para React.memo
+TimeSlot.displayName = "TimeSlot";

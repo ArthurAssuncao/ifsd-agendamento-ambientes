@@ -61,3 +61,7 @@ export const TIME_SLOT_COLORS = [
 ];
 
 export const EMAIL_SCHEDULE_COMISSION = "comissaohorario.sd@ifsudestemg.edu.br";
+
+export const MINUTES_PER_SLOT = 15; // Duração de cada slot em minutos
+
+export const COLOR_DISABLED_SLOT = "#535456"; // Cor para slots desabilitados

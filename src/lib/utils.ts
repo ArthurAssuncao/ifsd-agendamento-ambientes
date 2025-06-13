@@ -1,4 +1,6 @@
-export const daysOfWeek = [
+import { MINUTES_PER_SLOT } from "./constants";
+
+export const daysOfWeekPtBr = [
   "Segunda",
   "Terça",
   "Quarta",
@@ -34,7 +36,19 @@ export function checkMinutePassed(timestamp: number, minutes = 1) {
 
   const currentTime = new Date().getTime();
   const timeDifference = currentTime - storedTime;
-  const minuteMili = minutes * 60 * 10000;
+  const minuteMili = minutes * 60 * 1000;
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `Tempo armazenado: ${new Date(
+        storedTime
+      ).toLocaleString()}, Tempo atual: ${new Date(
+        currentTime
+      ).toLocaleString()}, Diferença: ${(timeDifference / 1000 / 60).toFixed(
+        2
+      )} min ${timeDifference >= minuteMili ? ">= 1 minuto" : "< 1 minuto"}`
+    );
+  }
 
   return timeDifference >= minuteMili;
 }
@@ -50,7 +64,7 @@ export const timeSlots = [
   { time: "09:15", period: "morning" },
   { time: "09:30", period: "morning" },
   { time: "09:45", period: "morning" },
-  { time: "10:00", period: "morning" },
+  { time: "10:00", period: "morning-break" },
   { time: "10:15", period: "morning" },
   { time: "10:30", period: "morning" },
   { time: "10:45", period: "morning" },
@@ -63,10 +77,20 @@ export const timeSlots = [
   { time: "12:45", period: "morning-break" },
   // Tarde
   { time: "13:00", period: "afternoon" },
+  { time: "13:15", period: "afternoon" },
+  { time: "13:30", period: "afternoon" },
   { time: "13:45", period: "afternoon" },
+  { time: "14:00", period: "afternoon" },
+  { time: "14:15", period: "afternoon" },
   { time: "14:30", period: "afternoon" },
-  { time: "15:15", period: "afternoon" },
+  { time: "14:45", period: "afternoon" },
+  { time: "15:00", period: "afternoon" },
+  { time: "15:15", period: "afternoon-break" },
+  { time: "15:30", period: "afternoon" },
+  { time: "15:45", period: "afternoon" },
   { time: "16:00", period: "afternoon" },
+  { time: "16:15", period: "afternoon" },
+  { time: "16:30", period: "afternoon" },
   { time: "16:45", period: "afternoon" },
   // break
   { time: "17:00", period: "afternoon-break" },
@@ -77,10 +101,20 @@ export const timeSlots = [
   { time: "18:15", period: "afternoon-break" },
   // Noite
   { time: "18:30", period: "evening" },
+  { time: "18:45", period: "evening" },
+  { time: "19:00", period: "evening" },
   { time: "19:15", period: "evening" },
+  { time: "19:30", period: "evening" },
+  { time: "19:45", period: "evening" },
   { time: "20:00", period: "evening" },
-  { time: "20:45", period: "evening" },
+  { time: "20:15", period: "evening" },
+  { time: "20:30", period: "evening" },
+  { time: "20:45", period: "evening-break" },
+  { time: "21:00", period: "evening" },
+  { time: "21:15", period: "evening" },
   { time: "21:30", period: "evening" },
+  { time: "21:45", period: "evening" },
+  { time: "22:00", period: "evening" },
   { time: "22:15", period: "evening" },
 ];
 
@@ -215,7 +249,7 @@ export function getNextTime(time: string): string {
   const timeParts = time.split(":").map(Number);
   let hours = timeParts[0];
   let minutes = timeParts[1];
-  minutes += 15;
+  minutes += MINUTES_PER_SLOT;
   if (minutes >= 60) {
     minutes -= 60;
     hours += 1;

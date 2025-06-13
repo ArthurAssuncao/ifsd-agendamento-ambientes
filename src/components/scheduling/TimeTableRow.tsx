@@ -1,7 +1,7 @@
 import { useSchedule } from "@/hooks/useSchedule";
 import {
   DAYS_OF_WEEK_TO_ENGLISH,
-  daysOfWeek,
+  daysOfWeekPtBr,
   getDateAddedDays,
   getDateFromWeek,
   getNextTime,
@@ -75,7 +75,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
             <div className="p-4 font-bold text-center border-r border-gray-300">
               Horário
             </div>
-            {daysOfWeek.map((day, index) => (
+            {daysOfWeekPtBr.map((day, index) => (
               <div
                 key={day}
                 className="p-4 font-bold text-center border-r border-gray-300 last-of-type:border-r-0"
@@ -117,7 +117,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                 >
                   {slot.time} a {getNextTime(slot.time)}
                 </div>
-                {daysOfWeek.map((day) => {
+                {daysOfWeekPtBr.map((day) => {
                   const scheduleSlot: ScheduleSlot | undefined =
                     schedule?.[week]?.[labId]?.[
                       DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek

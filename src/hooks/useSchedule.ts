@@ -4,6 +4,7 @@ import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
 import {
   checkMinutePassed,
   DAYS_OF_WEEK_TO_ENGLISH,
+  daysOfWeekPtBr,
   getNextWeek,
   getWeekNumber,
   MAX_WEEKS_TO_SHOW,
@@ -184,9 +185,18 @@ export const useSchedule: UseScheduleHook = (
       time: string,
       slot: ScheduleSlot | null
     ): Promise<void> => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `Syncing slot: week ${weekNumber}, lab ${labId}, day ${day}, time ${time}, slot:`,
+          slot
+        );
+      }
       if (!session?.user?.email || !supabase) return;
 
-      const dayEnglish = DAYS_OF_WEEK_TO_ENGLISH[day];
+      let dayEnglish = day;
+      if (daysOfWeekPtBr.includes(day)) {
+        dayEnglish = DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek;
+      }
       if (!dayEnglish) {
         console.error(`Dia da semana inválido: ${day}`);
         return;
@@ -236,7 +246,7 @@ export const useSchedule: UseScheduleHook = (
           const deleteMatch: SupabaseDeleteMatch = {
             environment_id: labId,
             week_number: weekNumber,
-            day_of_week: DAYS_OF_WEEK_TO_ENGLISH[day],
+            day_of_week: dayEnglish,
             time_slot: time,
             user_email: session.user.email,
           };
@@ -265,12 +275,23 @@ export const useSchedule: UseScheduleHook = (
       time: string,
       activity?: string
     ): void => {
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          `Updating slot: week ${weekNumber}, lab ${labId}, day ${day}, time ${time}, activity: ${activity}`
+        );
+      }
+
+      let dayEnglish = day;
+      if (daysOfWeekPtBr.includes(day)) {
+        dayEnglish = DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek;
+      }
+
       setSchedule((prev: YearSchedule | null) => {
         const newSchedule: YearSchedule = prev
           ? structuredClone(prev)
           : initializeEmptyYearSchedule();
 
-        if (activity?.trim()) {
+        if (activity && activity?.trim()) {
           const newSlot: ScheduleSlot = {
             activity,
             user: {
@@ -282,19 +303,24 @@ export const useSchedule: UseScheduleHook = (
 
           newSchedule[weekNumber] = newSchedule[weekNumber] || {};
           newSchedule[weekNumber][labId] = newSchedule[weekNumber][labId] || {};
-          newSchedule[weekNumber][labId][day] =
-            newSchedule[weekNumber][labId][day] || {};
-          newSchedule[weekNumber][labId][day][time] = newSlot;
+          newSchedule[weekNumber][labId][dayEnglish] =
+            newSchedule[weekNumber][labId][dayEnglish] || {};
+          newSchedule[weekNumber][labId][dayEnglish][time] = newSlot;
 
           // Sincroniza com o Supabase
-          syncSlot(weekNumber, labId, day, time, newSlot);
+          syncSlot(weekNumber, labId, dayEnglish, time, newSlot);
         } else {
           // Remove o slot
-          if (newSchedule[weekNumber]?.[labId]?.[day]?.[time]) {
-            delete newSchedule[weekNumber][labId][day][time];
-            cleanEmptyStructures(newSchedule, weekNumber, labId, day);
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `Removing slot (updateSlot else): week ${weekNumber}, lab ${labId}, day ${dayEnglish}, time ${time}`
+            );
+          }
+          if (newSchedule[weekNumber]?.[labId]?.[dayEnglish]?.[time]) {
+            delete newSchedule[weekNumber][labId][dayEnglish][time];
+            cleanEmptyStructures(newSchedule, weekNumber, labId, dayEnglish);
             // Sincroniza remoção com o Supabase
-            syncSlot(weekNumber, labId, day, time, null);
+            syncSlot(weekNumber, labId, dayEnglish, time, null);
           }
         }
 

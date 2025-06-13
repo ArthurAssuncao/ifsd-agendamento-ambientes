@@ -1,7 +1,7 @@
 import { useSchedule } from "@/hooks/useSchedule";
 import {
   DAYS_OF_WEEK_TO_ENGLISH,
-  daysOfWeek,
+  daysOfWeekPtBr,
   getDateAddedDays,
   getDateFromWeek,
   getNextTime,
@@ -69,6 +69,37 @@ export function TimeTable({ labId, week }: TimeTableProps) {
       );
   }, []);
 
+  const isEqualSlot = (a?: ScheduleSlot, b?: ScheduleSlot) => {
+    if (!a || !b) return false;
+    return a.activity === b.activity && a.user?.email === b.user?.email;
+  };
+
+  const getSlotGroups = (day: DaysWeek) => {
+    const groups: { start: number; end: number }[] = [];
+    let currentGroupStart = 0;
+
+    for (let i = 1; i < timeSlots.length; i++) {
+      const current = schedule?.[week]?.[labId]?.[day]?.[timeSlots[i].time];
+      const prev = schedule?.[week]?.[labId]?.[day]?.[timeSlots[i - 1].time];
+
+      if (!isEqualSlot(current, prev)) {
+        groups.push({
+          start: currentGroupStart,
+          end: i - 1,
+        });
+        currentGroupStart = i;
+      }
+    }
+
+    // Adiciona o último grupo
+    groups.push({
+      start: currentGroupStart,
+      end: timeSlots.length - 1,
+    });
+
+    return groups;
+  };
+
   const closeContextMenu = () => {
     setContextMenu(null);
   };
@@ -79,6 +110,11 @@ export function TimeTable({ labId, week }: TimeTableProps) {
     const { labId, week, time, day } = contextMenu;
     updateSlot(week, labId, day as DaysWeek, time);
     closeContextMenu();
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        `Removed activity for ${day} at ${time} in lab ${labId} for week ${week}`
+      );
+    }
   };
 
   const contextActions = [
@@ -89,7 +125,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
   ];
 
   return (
-    <div className="min-w-full overflow-x-auto mt-4 bg-white rounded-lg shadow-md">
+    <div className="min-w-full overflow-x-auto mt-4 bg-white rounded-lg shadow-lg ">
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -128,9 +164,12 @@ export function TimeTable({ labId, week }: TimeTableProps) {
         </div>
 
         {/* Colunas de dias da semana */}
-        <div className="flex flex-1 ">
-          {daysOfWeek.map((day, dayIndex) => {
+        <div className="flex flex-1">
+          {daysOfWeekPtBr.map((day, dayIndex) => {
             const date = getDateAddedDays(getDateFromWeek(week), dayIndex);
+            const dayKey = DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek;
+            const slotGroups = getSlotGroups(dayKey);
+
             return (
               <div
                 key={day}
@@ -157,29 +196,35 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                 </div>
 
                 {/* Slots de tempo */}
-                {timeSlots.map((slot) => {
+                {slotGroups.map((group) => {
+                  const slot = timeSlots[group.start];
+                  const scheduleSlot =
+                    schedule?.[week]?.[labId]?.[dayKey]?.[slot.time];
+                  const groupHeight = group.end - group.start + 1;
                   const classes = getSlotClasses(slot.period);
-                  const scheduleSlot: ScheduleSlot | undefined =
-                    schedule?.[week]?.[labId]?.[
-                      DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek
-                    ]?.[slot.time];
+                  const disabled = slot.period.includes("break");
 
                   return (
                     <TimeSlot
-                      key={`${day}-${slot.time}`}
+                      key={`${day}-${group.start}`}
                       day={day}
                       time={slot.time}
                       labId={labId}
                       week={week}
-                      className={`h-16 border-b border-gray-300 ${
+                      className={`${disabled && "border-transparent"} ${
                         classes.slotCell
-                      } ${
-                        timeSlots.indexOf(slot) % 2 === 1 ? "bg-gray-50" : ""
-                      }`}
+                      } ${group.start % 2 === 1 ? "bg-gray-50" : ""}`}
                       setContextMenu={setContextMenu}
                       scheduleSlot={scheduleSlot}
                       updateSlot={updateSlot}
-                      disabled={slot.period.includes("break")}
+                      disabled={disabled}
+                      mergeTop={scheduleSlot && group.start > 0}
+                      mergeBottom={
+                        scheduleSlot && group.end < timeSlots.length - 1
+                      }
+                      groupHeight={groupHeight}
+                      isFirstInGroup={true}
+                      isLastInGroup={true}
                     />
                   );
                 })}
