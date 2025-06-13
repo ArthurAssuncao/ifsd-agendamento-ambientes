@@ -8,7 +8,7 @@ import {
   timeSlots,
 } from "@/lib/utils";
 import { DaysWeek, ScheduleSlot } from "@/types";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ContextMenu, ContextMenuData } from "../ContextMenu";
 import { TimeSlot } from "./TimeSlot";
 
@@ -20,14 +20,14 @@ type TimeTableProps = {
 const getSlotClasses = (period: string) => {
   if (period.includes("break")) {
     return {
-      row: "bg-gray-300 h-16",
-      timeCell: "bg-gray-400 font-semibold h-16",
-      slotCell: "bg-gray-400 h-16",
+      col: "bg-gray-300 w-full",
+      timeHeader: "bg-gray-400 font-semibold",
+      slotCell: "bg-gray-400",
     };
   }
   return {
-    row: "",
-    timeCell: "h-32",
+    col: "",
+    timeHeader: "",
     slotCell: "",
   };
 };
@@ -35,6 +35,39 @@ const getSlotClasses = (period: string) => {
 export function TimeTable({ labId, week }: TimeTableProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
   const { schedule, updateSlot } = useSchedule(true);
+  const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const isUserScroll = useRef(true);
+
+  useEffect(() => {
+    columnRefs.current = columnRefs.current.slice(0, 7);
+  }, []);
+
+  useEffect(() => {
+    const columns = columnRefs.current.filter(Boolean) as HTMLDivElement[];
+
+    const handleScroll = (scrolledColumn: HTMLDivElement) => {
+      if (!isUserScroll.current) return;
+      isUserScroll.current = false;
+
+      const scrollTop = scrolledColumn.scrollTop;
+      columns.forEach((col) => (col.scrollTop = scrollTop));
+
+      requestAnimationFrame(() => {
+        isUserScroll.current = true;
+      });
+    };
+
+    const listeners = columns.map((col) => {
+      const handler = () => handleScroll(col);
+      col.addEventListener("scroll", handler);
+      return { col, handler };
+    });
+
+    return () =>
+      listeners.forEach(({ col, handler }) =>
+        col.removeEventListener("scroll", handler)
+      );
+  }, []);
 
   const closeContextMenu = () => {
     setContextMenu(null);
@@ -43,11 +76,8 @@ export function TimeTable({ labId, week }: TimeTableProps) {
   const handleRemoveActivity = () => {
     if (!contextMenu) return;
 
-    console.log("Remover atividade:", contextMenu);
-
     const { labId, week, time, day } = contextMenu;
     updateSlot(week, labId, day as DaysWeek, time);
-
     closeContextMenu();
   };
 
@@ -59,7 +89,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
   ];
 
   return (
-    <div className="min-w-full overflow-x-auto mt-4 bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="min-w-full overflow-x-auto mt-4 bg-white rounded-lg shadow-md">
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -68,56 +98,67 @@ export function TimeTable({ labId, week }: TimeTableProps) {
           actions={contextActions}
         />
       )}
-      <div className="min-w-full bg-white rounded-lg shadow ">
-        {/* Cabeçalho com dias da semana */}
-        <div className="bg-gray-100">
-          <div className="grid grid-cols-7 border-b border-gray-300 bg-gray-100 z-[1]  sticky top-0 mr-[15]">
-            <div className="p-4 font-bold text-center border-r border-gray-300">
-              Horário
-            </div>
-            {daysOfWeek.map((day, index) => (
-              <div
-                key={day}
-                className="p-4 font-bold text-center border-r border-gray-300 last-of-type:border-r-0"
-              >
-                {day} (
-                {getDateAddedDays(
-                  getDateFromWeek(week),
-                  index
-                ).toLocaleDateString("pt-BR", {
-                  month: "numeric",
-                  day: "numeric",
-                })}
-                )
-              </div>
-            ))}
-          </div>
-        </div>
 
+      <div className="flex flex-1 flex-nowrap min-w-full bg-white rounded-lg shadow">
+        {/* Coluna de horários */}
         <div
-          className="overflow-y-auto"
+          className="bg-gray-100 min-w-[120px] border-r border-gray-300 overscroll-auto scrollbar-none overflow-y-scroll"
           style={{
             maxHeight: "calc(100vh - 200px)",
             scrollbarGutter: "stable",
           }}
+          ref={(el: HTMLDivElement | null) => {
+            columnRefs.current[0] = el;
+          }}
         >
-          {/* Linhas de horários */}
-          {timeSlots.map((slot, index) => {
+          <div className="h-[60px] flex items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
+            Horário \ Dia
+          </div>
+          {timeSlots.map((slot) => {
             const classes = getSlotClasses(slot.period);
-
             return (
               <div
                 key={slot.time}
-                className={`grid grid-cols-7 border-b border-gray-300 last-of-type:border-b-0 ${
-                  classes.row
-                } ${index % 2 === 1 ? "bg-gray-50" : ""}`}
+                className={`h-16 flex items-center justify-center font-medium border-b border-gray-300 ${classes.timeHeader}`}
               >
-                <div
-                  className={`flex p-4 items-center justify-center font-medium border-r border-gray-300 last-of-type:border-r-0 ${classes.timeCell}`}
-                >
-                  {slot.time} a {getNextTime(slot.time)}
+                {slot.time} - {getNextTime(slot.time)}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Colunas de dias da semana */}
+        <div className="flex flex-1 ">
+          {daysOfWeek.map((day, dayIndex) => {
+            const date = getDateAddedDays(getDateFromWeek(week), dayIndex);
+            return (
+              <div
+                key={day}
+                ref={(el: HTMLDivElement | null) => {
+                  columnRefs.current[dayIndex + 1] = el;
+                }}
+                className={`overscroll-auto scrollbar-none overflow-y-scroll flex-1 min-w-[150px] border-r border-gray-300 last:border-r-0 ${
+                  getSlotClasses("").col
+                }`}
+                style={{
+                  maxHeight: "calc(100vh - 200px)",
+                  scrollbarGutter: "stable",
+                }}
+              >
+                {/* Cabeçalho do dia */}
+                <div className="h-[60px] flex flex-col items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
+                  <div>{day}</div>
+                  <div className="text-sm">
+                    {date.toLocaleDateString("pt-BR", {
+                      month: "numeric",
+                      day: "numeric",
+                    })}
+                  </div>
                 </div>
-                {daysOfWeek.map((day) => {
+
+                {/* Slots de tempo */}
+                {timeSlots.map((slot) => {
+                  const classes = getSlotClasses(slot.period);
                   const scheduleSlot: ScheduleSlot | undefined =
                     schedule?.[week]?.[labId]?.[
                       DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek
@@ -130,7 +171,11 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                       time={slot.time}
                       labId={labId}
                       week={week}
-                      className={`border-r border-gray-300 last-of-type:border-r-0 ${classes.slotCell}`}
+                      className={`h-16 border-b border-gray-300 ${
+                        classes.slotCell
+                      } ${
+                        timeSlots.indexOf(slot) % 2 === 1 ? "bg-gray-50" : ""
+                      }`}
                       setContextMenu={setContextMenu}
                       scheduleSlot={scheduleSlot}
                       updateSlot={updateSlot}

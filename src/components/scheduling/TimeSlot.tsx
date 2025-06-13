@@ -85,7 +85,7 @@ export const TimeSlot = React.memo(
     return (
       <>
         <div
-          className={`p-4 ${
+          className={`pr-4 pl-4 ${
             scheduleSlot ? `bg-[${colorSlot}]` : `bg-[${colorSlot}]`
           } ${
             !disabled ? `cursor-pointer hover:bg-green-100` : ``
