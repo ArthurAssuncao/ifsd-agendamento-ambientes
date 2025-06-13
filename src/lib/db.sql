@@ -11,7 +11,6 @@ CREATE TABLE IF NOT EXISTS environment_schedule (
   )),
   time_slot TEXT NOT NULL CHECK (time_slot ~ '^[0-9]{2}:[0-9]{2}$'),
   activity_name TEXT NOT NULL,
-  user_id UUID REFERENCES auth.users(id),
   user_email TEXT NOT NULL,
   booking_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   details TEXT,
@@ -40,6 +39,13 @@ FOR SELECT USING (
   auth.jwt() ->> 'email' = user_email OR
   auth.jwt() ->> 'role' = 'admin'
 );
+
+-- Nova política exclusiva para a comissão
+CREATE POLICY "allow_full_access_to_commission" 
+ON environment_schedule
+FOR ALL
+USING (auth.jwt() ->> 'email' = 'comissao@ifsudestemg.edu.br')
+WITH CHECK (auth.jwt() ->> 'email' = 'comissao@ifsudestemg.edu.br');
 
 -- Política de inserção (usuário só pode inserir com seu próprio email)
 CREATE POLICY schedule_insert_policy ON environment_schedule

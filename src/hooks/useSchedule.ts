@@ -1,6 +1,13 @@
 // Tipos importados (assumindo que existem em @/types)
+import { EMAIL_SCHEDULE_COMISSION } from "@/lib/constants";
 import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
-import { checkMinutePassed, DAYS_OF_WEEK_TO_ENGLISH } from "@/lib/utils";
+import {
+  checkMinutePassed,
+  DAYS_OF_WEEK_TO_ENGLISH,
+  getNextWeek,
+  getWeekNumber,
+  MAX_WEEKS_TO_SHOW,
+} from "@/lib/utils";
 import { DaysWeek, ScheduleSlot, YearSchedule } from "@/types";
 import {
   CleanEmptyStructuresFunction,
@@ -44,16 +51,60 @@ export const useSchedule: UseScheduleHook = (
           return await client
             .from("environment_schedule")
             .select("*")
-            .eq("user_email", session.user.email);
+            .in("user_email", [session.user.email, EMAIL_SCHEDULE_COMISSION]);
         });
 
         const { data, error } = result;
 
         if (error) throw error;
 
-        if (data?.length) {
+        if ((data as DatabaseScheduleItem[])?.length) {
           const dbSchedule: YearSchedule = {};
-          data.forEach((item: DatabaseScheduleItem) => {
+          const itensComissao = new Set<DatabaseScheduleItem>();
+          // Filtra itens com week_number 100
+          const itensServidores = (data as DatabaseScheduleItem[]).filter(
+            (item) => {
+              if (item.week_number === 100) {
+                itensComissao.add(item);
+                return false; // Exclui itens com week_number 100
+              }
+              return true; // Mantém outros itens
+            }
+          );
+
+          const weeks = new Set<number>();
+          const currentWeek = getWeekNumber(new Date());
+          weeks.add(currentWeek); // Adiciona a semana atual
+          for (let i = 0; i < MAX_WEEKS_TO_SHOW - 1; i++) {
+            const weekNumber = getNextWeek(currentWeek);
+            weeks.add(weekNumber);
+          }
+
+          itensComissao.forEach((item: DatabaseScheduleItem) => {
+            for (const weekNumber of weeks) {
+              dbSchedule[weekNumber] = dbSchedule[weekNumber] || {};
+              dbSchedule[weekNumber][item.environment_id] =
+                dbSchedule[weekNumber][item.environment_id] || {};
+              dbSchedule[weekNumber][item.environment_id][item.day_of_week] =
+                dbSchedule[weekNumber][item.environment_id][item.day_of_week] ||
+                {};
+
+              dbSchedule[weekNumber][item.environment_id][item.day_of_week][
+                item.time_slot
+              ] = {
+                activity: item.activity_name,
+                user: {
+                  email: item.user_email,
+                  name: "Comissão de Horários",
+                },
+                bookingTime: item.booking_time,
+                details: item.details || undefined,
+                dbSynced: true, // Marca como sincronizado com o DB
+              };
+            }
+          });
+
+          itensServidores.forEach((item: DatabaseScheduleItem) => {
             dbSchedule[item.week_number] = dbSchedule[item.week_number] || {};
             dbSchedule[item.week_number][item.environment_id] =
               dbSchedule[item.week_number][item.environment_id] || {};
@@ -111,26 +162,19 @@ export const useSchedule: UseScheduleHook = (
       setSchedule(storedSchedule || initializeEmptyYearSchedule());
       setLoading(false);
     }
-  }, [
-    session?.user.email,
-    supabase,
-    loadFromStorage,
-    saveToStorage,
-    session?.user?.name,
-    whenSyncDb,
-    saveWhenSyncDb,
-    sync,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 2. Persistência automática do schedule
-  useEffect(() => {
-    if (schedule && !loading) {
-      const prevSchedule: YearSchedule = loadFromStorage();
-      if (JSON.stringify(prevSchedule) !== JSON.stringify(schedule)) {
-        saveToStorage(schedule);
-      }
-    }
-  }, [schedule, saveToStorage, loading, loadFromStorage]);
+  // useEffect(() => {
+  //   if (schedule && !loading) {
+  //     const prevSchedule: YearSchedule = loadFromStorage();
+  //     if (JSON.stringify(prevSchedule) !== JSON.stringify(schedule)) {
+  //       saveToStorage(schedule);
+  //       saveWhenSyncDb(new Date().getTime());
+  //     }
+  //   }
+  // }, [schedule, saveToStorage, loading, loadFromStorage, saveWhenSyncDb]);
 
   const syncSlot: SyncSlotFunction = useCallback(
     async (

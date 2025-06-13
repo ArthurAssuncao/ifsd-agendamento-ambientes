@@ -1,15 +1,15 @@
 import { useSchedule } from "@/hooks/useSchedule";
 import {
+  DAYS_OF_WEEK_TO_ENGLISH,
   daysOfWeek,
   getDateAddedDays,
   getDateFromWeek,
   getNextTime,
   timeSlots,
 } from "@/lib/utils";
-import { DaysWeek } from "@/types/index.js";
+import { DaysWeek, ScheduleSlot } from "@/types";
 import { useState } from "react";
-import { ContextMenu } from "../ContextMenu.jsx";
-import { ContextMenuData } from "../ContextMenu.jsx/ContextMenu";
+import { ContextMenu, ContextMenuData } from "../ContextMenu";
 import { TimeSlot } from "./TimeSlot";
 
 type TimeTableProps = {
@@ -20,13 +20,13 @@ type TimeTableProps = {
 const getSlotClasses = (period: string) => {
   if (period.includes("break")) {
     return {
-      row: "bg-gray-100 h-16",
-      timeCell: "bg-gray-200 font-semibold h-16",
-      slotCell: "bg-gray-100 h-16",
+      row: "bg-gray-300 h-16",
+      timeCell: "bg-gray-400 font-semibold h-16",
+      slotCell: "bg-gray-400 h-16",
     };
   }
   return {
-    row: "hover:bg-gray-200 transition duration-200",
+    row: "",
     timeCell: "h-32",
     slotCell: "",
   };
@@ -104,6 +104,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
           {/* Linhas de horários */}
           {timeSlots.map((slot, index) => {
             const classes = getSlotClasses(slot.period);
+
             return (
               <div
                 key={slot.time}
@@ -116,19 +117,27 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                 >
                   {slot.time} a {getNextTime(slot.time)}
                 </div>
-                {daysOfWeek.map((day) => (
-                  <TimeSlot
-                    key={`${day}-${slot.time}`}
-                    day={day}
-                    time={slot.time}
-                    labId={labId}
-                    week={week}
-                    className={`border-r border-gray-300 last-of-type:border-r-0 ${classes.slotCell}`}
-                    setContextMenu={setContextMenu}
-                    schedule={schedule}
-                    updateSlot={updateSlot}
-                  />
-                ))}
+                {daysOfWeek.map((day) => {
+                  const scheduleSlot: ScheduleSlot | undefined =
+                    schedule?.[week]?.[labId]?.[
+                      DAYS_OF_WEEK_TO_ENGLISH[day] as DaysWeek
+                    ]?.[slot.time];
+
+                  return (
+                    <TimeSlot
+                      key={`${day}-${slot.time}`}
+                      day={day}
+                      time={slot.time}
+                      labId={labId}
+                      week={week}
+                      className={`border-r border-gray-300 last-of-type:border-r-0 ${classes.slotCell}`}
+                      setContextMenu={setContextMenu}
+                      scheduleSlot={scheduleSlot}
+                      updateSlot={updateSlot}
+                      disabled={slot.period.includes("break")}
+                    />
+                  );
+                })}
               </div>
             );
           })}

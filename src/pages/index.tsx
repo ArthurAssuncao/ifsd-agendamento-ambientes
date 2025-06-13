@@ -12,6 +12,7 @@ import {
   getNextWeek,
   getPreviousWeek,
   getWeekNumber,
+  MAX_WEEKS_TO_SHOW,
 } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -31,7 +32,7 @@ export default function Home() {
     month: "long",
     day: "numeric",
   } as Intl.DateTimeFormatOptions;
-  const maxWeeks = 4; // Número máximo de semanas para exibir
+  const maxWeeks = MAX_WEEKS_TO_SHOW; // Número máximo de semanas para exibir
 
   // console.log("Session data:", session);
   if (status === "loading") {

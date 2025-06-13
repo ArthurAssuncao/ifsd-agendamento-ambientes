@@ -168,9 +168,14 @@ export function getDateFromLastOfWeek(
   return resultDate;
 }
 
-const MAX_WEEKS_YEAR = 52;
+export const MAX_WEEKS_YEAR = 52;
+export const MAX_WEEKS_TO_SHOW = 4; // Número máximo de semanas para exibir
 
-export function getNextWeek(week: number, nextLimit = 0, weekBase = 0): number {
+export function getNextWeek(
+  week: number,
+  nextLimit = MAX_WEEKS_TO_SHOW,
+  weekBase = 0
+): number {
   if (weekBase == 0) {
     weekBase = getWeekNumber(new Date());
   }
