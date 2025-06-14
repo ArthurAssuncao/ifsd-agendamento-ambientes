@@ -20,3 +20,9 @@ export type EnvironmentSchedule = {
   class_group?: string;
   created_at: string;
 };
+
+export type Environment = {
+  id: string;
+  name: string;
+  shortName: string;
+};

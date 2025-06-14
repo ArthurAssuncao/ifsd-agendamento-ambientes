@@ -1,3 +1,5 @@
+import { Environment } from "@/types/schedule";
+
 export const TIME_SLOT_COLORS = [
   // Grupo 1: Cores Pastéis Delicadas (Destaque Principal)
   "#FFD1DC", // Rosa bebê
@@ -65,3 +67,26 @@ export const EMAIL_SCHEDULE_COMISSION = "comissaohorario.sd@ifsudestemg.edu.br";
 export const MINUTES_PER_SLOT = 15; // Duração de cada slot em minutos
 
 export const COLOR_DISABLED_SLOT = "#535456"; // Cor para slots desabilitados
+
+export const ENVIRONMENTS: Environment[] = [
+  {
+    name: "Laboratório de Informática 1",
+    shortName: "Lab. Informática 1",
+    id: "LabInf1",
+  },
+  {
+    name: "Laboratório de Informática 2",
+    shortName: "Lab. Informática 2",
+    id: "LabInf2",
+  },
+  {
+    name: "Laboratório de Simulação Ferroviária",
+    shortName: "Lab. Simulação Ferroviária",
+    id: "LabSimFer",
+  },
+  {
+    name: "Auditório",
+    shortName: "Auditório",
+    id: "Auditorio",
+  },
+];
