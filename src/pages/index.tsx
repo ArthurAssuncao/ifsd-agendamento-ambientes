@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { ListActivities } from "@/components/ListActivities/ListActivities";
 import { LoginPage } from "@/components/LoginPage/LoginPage";
 import { NavBar } from "@/components/NavBar";
-import { TimeTable } from "@/components/scheduling/TimeTable";
+import { Schedules } from "@/components/scheduling/Schedules";
 import { StatusBar } from "@/components/StatusBar";
 import {
   getDateFromLastOfWeek,
@@ -21,7 +21,8 @@ import { ToastContainer } from "react-toastify";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const [currentLab] = useState<string>("LabInf1"); //setCurrentLab
+
+  // const { schedule } = useSchedule(true);
 
   const currentWeekNumber = getWeekNumber(new Date());
 
@@ -34,7 +35,6 @@ export default function Home() {
   } as Intl.DateTimeFormatOptions;
   const maxWeeks = MAX_WEEKS_TO_SHOW; // Número máximo de semanas para exibir
 
-  // console.log("Session data:", session);
   if (status === "loading") {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
@@ -112,7 +112,6 @@ export default function Home() {
                 optionsDateFormat
               )}{" "}
             </span>
-            <span>Laboratório: {currentLab}</span>
           </div>
           <div>
             <button
@@ -129,7 +128,8 @@ export default function Home() {
             </button>
           </div>
         </div>
-        <TimeTable labId={currentLab} week={currentWeek} />
+
+        <Schedules currentWeek={currentWeek} />
       </main>
 
       <ListActivities />

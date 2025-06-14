@@ -11,7 +11,9 @@ export const useScheduleStorage = () => {
       const data = localStorage.getItem(syncDbKey);
       if (data) {
         const timestamp = JSON.parse(data);
-        console.log("DB está sincronizado:", timestamp);
+        if (process.env.NODE_ENV === "development") {
+          console.log("DB está sincronizado:", timestamp);
+        }
         return timestamp;
       }
       return null;
@@ -24,7 +26,9 @@ export const useScheduleStorage = () => {
   const saveWhenSyncDb = useCallback((syncTimestamp: number) => {
     try {
       localStorage.setItem(syncDbKey, JSON.stringify(syncTimestamp));
-      console.log("Dados salvos para sincronização com o DB?", syncTimestamp);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Dados salvos para sincronização com o DB?", syncTimestamp);
+      }
     } catch (error) {
       console.error("Erro ao salvar dados para sincronização com o DB:", error);
     }
@@ -73,7 +77,9 @@ export function generateScheduleTableData(
     }
   }
 
-  console.log("Generated schedule data:", scheduleData);
+  if (process.env.NODE_ENV === "development") {
+    console.log("Generated schedule data:", scheduleData);
+  }
 
   return scheduleData;
 }

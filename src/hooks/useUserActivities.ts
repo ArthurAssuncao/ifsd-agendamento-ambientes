@@ -27,7 +27,9 @@ export function useUserActivities() {
       }
 
       // Debug: verifique se está sendo chamado sem necessidade
-      console.log("Fetching user activities...");
+      if (process.env.NODE_ENV === "development") {
+        console.log("Fetching user activities...");
+      }
 
       try {
         if (isMounted) setLoading(true);

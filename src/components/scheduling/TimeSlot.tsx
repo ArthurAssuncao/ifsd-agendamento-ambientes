@@ -64,7 +64,9 @@ export const TimeSlot = React.memo(
 
     const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
-      console.log("Schedule slot context menu clicked", scheduleSlot);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Schedule slot context menu clicked", scheduleSlot);
+      }
       if (!disabled && scheduleSlot?.user?.email !== EMAIL_SCHEDULE_COMISSION) {
         e.preventDefault();
         setContextMenu({

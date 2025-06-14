@@ -130,7 +130,9 @@ export const useSchedule: UseScheduleHook = (
             };
           });
 
-          console.log("Schedule loaded from Supabase:", dbSchedule);
+          if (process.env.NODE_ENV === "development") {
+            console.log("Schedule loaded from Supabase:", dbSchedule);
+          }
 
           setSchedule(dbSchedule);
           saveToStorage(dbSchedule);
@@ -158,7 +160,9 @@ export const useSchedule: UseScheduleHook = (
     } else {
       // Se a sincronização com o DB estiver desativada, carrega apenas do localStorage
       const storedSchedule: YearSchedule = loadFromStorage();
-      console.log("Loading schedule from localStorage:", storedSchedule);
+      if (process.env.NODE_ENV === "development") {
+        console.log("Loading schedule from localStorage:", storedSchedule);
+      }
 
       setSchedule(storedSchedule || initializeEmptyYearSchedule());
       setLoading(false);

@@ -34,7 +34,7 @@ const getSlotClasses = (period: string) => {
 
 export function TimeTable({ labId, week }: TimeTableProps) {
   const [contextMenu, setContextMenu] = useState<ContextMenuData | null>(null);
-  const { schedule, updateSlot } = useSchedule(true);
+  const { schedule, updateSlot } = useSchedule(false);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isUserScroll = useRef(true);
 
