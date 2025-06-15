@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer className="bg-green-800 text-white py-6">
+    <footer className="bg-green-800 text-white py-6 min-h-58 lg:min-h-auto">
       <div className="container mx-auto px-4 text-center">
         <p>
           Instituto Federal do Sudeste de Minas Gerais - Campus Santos Dumont

@@ -6,6 +6,7 @@ import { LoginPage } from "@/components/LoginPage/LoginPage";
 import { NavBar } from "@/components/NavBar";
 import { Schedules } from "@/components/scheduling/Schedules";
 import { StatusBar } from "@/components/StatusBar";
+import { getLastUpdateTime } from "@/hooks/useScheduleStorage";
 import {
   getDateFromLastOfWeek,
   getDateFromWeek,
@@ -73,6 +74,8 @@ export default function Home() {
     );
   }
 
+  const lastUpdateTime = getLastUpdateTime();
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
@@ -131,7 +134,7 @@ export default function Home() {
         <Schedules currentWeek={currentWeek} />
       </main>
       {/* <ListActivities /> */}
-      <StatusBar />
+      {lastUpdateTime && <StatusBar lastUpdateTime={lastUpdateTime} />}
       <ToastContainer
         position="bottom-right"
         autoClose={5000}

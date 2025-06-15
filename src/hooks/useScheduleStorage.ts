@@ -1,6 +1,16 @@
 import { WeekSchedule, YearSchedule } from "@/types";
 import { useCallback } from "react";
 
+export const getLastUpdateTime = (): number | null => {
+  const data = localStorage.getItem("syncDbScheduleData");
+  if (data) {
+    const timestamp = JSON.parse(data);
+
+    return timestamp;
+  }
+  return null;
+};
+
 export const useScheduleStorage = () => {
   const storageKey = "scheduleTableData";
 
