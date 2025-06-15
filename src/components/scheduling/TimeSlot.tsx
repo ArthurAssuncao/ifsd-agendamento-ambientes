@@ -69,6 +69,17 @@ export const TimeSlot = React.memo(
         console.log("Schedule slot context menu clicked", scheduleSlot);
       }
 
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "mergeTop, mergeBottom, groupHeight, isFirstInGroup, isLastInGroup",
+          mergeTop,
+          mergeBottom,
+          groupHeight,
+          isFirstInGroup,
+          isLastInGroup
+        );
+      }
+
       e.preventDefault();
       setContextMenu({
         x: e.clientX,
@@ -131,14 +142,17 @@ export const TimeSlot = React.memo(
     return (
       <>
         <div
+          data-disabled={disabled}
           className={` flex relative transition-colors duration-200 ${
-            mergeTop ? "border border-transparent" : "border-t border-gray-200"
+            mergeTop && !isFirstInGroup
+              ? "border border-transparent"
+              : "border-t border-gray-200"
           } ${
-            mergeBottom
+            mergeBottom && !isLastInGroup
               ? "border border-transparent"
               : "border-b border-gray-200"
           } 
-            
+          
           ${className}`}
           style={{
             height: `${groupHeight * 64}px`,

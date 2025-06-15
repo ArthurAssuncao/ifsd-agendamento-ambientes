@@ -1,6 +1,7 @@
 import { useSchedule } from "@/hooks";
 import { ENVIRONMENTS } from "@/lib/constants";
 import { useState } from "react";
+import { Loading } from "../Loading";
 import { TimeTable } from "./TimeTable";
 
 type SchedulesProps = {
@@ -9,7 +10,7 @@ type SchedulesProps = {
 
 export const Schedules = ({ currentWeek }: SchedulesProps) => {
   const [currentLab, setCurrentLab] = useState<string>("LabInf1"); //setCurrentLab
-  const { schedule } = useSchedule(true);
+  const { schedule, loading } = useSchedule(true);
 
   // Número máximo de semanas para exibir
 
@@ -30,6 +31,7 @@ export const Schedules = ({ currentWeek }: SchedulesProps) => {
           </button>
         ))}
       </div>
+      {loading && <Loading />}
       {schedule && <TimeTable labId={currentLab} week={currentWeek} />}
     </div>
   );

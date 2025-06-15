@@ -1,6 +1,7 @@
 // pages/index.js
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { Loading } from "@/components/Loading";
 import { LoginPage } from "@/components/LoginPage/LoginPage";
 import { NavBar } from "@/components/NavBar";
 import { Schedules } from "@/components/scheduling/Schedules";
@@ -44,7 +45,7 @@ export default function Home() {
 
         {/* Conteúdo Principal */}
         <main className="flex-grow flex flex-col items-center justify-center p-4 text-center">
-          <p>Carregando...</p>
+          <Loading />
         </main>
 
         {/* Rodapé */}
@@ -75,7 +76,6 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
-
       {/* Navbar */}
       <NavBar />
 
@@ -130,9 +130,7 @@ export default function Home() {
 
         <Schedules currentWeek={currentWeek} />
       </main>
-
       {/* <ListActivities /> */}
-
       <StatusBar />
       <ToastContainer
         position="bottom-right"
@@ -146,7 +144,6 @@ export default function Home() {
         pauseOnHover
         theme="light"
       />
-
       {/* Rodapé */}
       <Footer />
     </div>

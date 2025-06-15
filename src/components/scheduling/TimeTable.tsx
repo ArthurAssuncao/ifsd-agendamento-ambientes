@@ -184,7 +184,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
             return (
               <div
                 key={slot.time}
-                className={`h-16 flex items-center justify-center font-medium border-b border-gray-300 ${classes.timeHeader}`}
+                className={`h-16 flex items-center justify-center font-medium border-t border-b  border-gray-300 ${classes.timeHeader}`}
               >
                 {slot.time} - {getNextTime(slot.time)}
               </div>
@@ -262,7 +262,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                       time={slot.time}
                       labId={labId}
                       week={week}
-                      className={`${disabled && "border-transparent"} ${
+                      className={`${disabled ? "border-transparent" : ""} ${
                         classes.slotCell
                       } ${group.start % 2 === 1 ? "bg-gray-50" : ""}`}
                       setContextMenu={setContextMenu}
