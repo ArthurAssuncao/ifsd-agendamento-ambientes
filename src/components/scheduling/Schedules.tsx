@@ -15,11 +15,11 @@ export const Schedules = ({ currentWeek }: SchedulesProps) => {
 
   return (
     <div className="flex justify-center flex-col w-full">
-      <div className="flex items-center justify-center w-full gap-2">
+      <div className="flex items-center justify-center w-full lg:gap-2 flex-wrap lg:flex-nowrap">
         {ENVIRONMENTS.map((env) => (
           <button
             key={env.id}
-            className={`px-4 py-2 m-1 rounded-lg text-sm font-semibold hover:cursor-pointer  ${
+            className={`min-w-36 px-4 py-2 m-1 rounded-lg text-sm font-semibold hover:cursor-pointer  ${
               currentLab === env.id
                 ? "bg-green-500 text-white"
                 : "bg-gray-200 hover:bg-gray-300"

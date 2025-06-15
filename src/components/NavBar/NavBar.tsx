@@ -13,11 +13,9 @@ export function NavBar() {
           <Image
             src={ifLogoWite}
             alt="Logo IFSudesteMG"
-            className="h-10 w-auto"
-            width={40}
-            height={40}
+            className="h-14 lg:h-10 w-auto"
           />
-          <span className="font-semibold text-xl mr-8">
+          <span className="font-semibold text-xl mr-8 text-center lg:text-left">
             IFSudesteMG Campus Santos Dumont
           </span>
           <div className="hidden md:flex space-x-6">

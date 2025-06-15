@@ -99,7 +99,7 @@ export default function Home() {
               />
             </button>
           </div>
-          <div className="flex flex-col items-center gap-2 pt-2 w-[340px]">
+          <div className="flex flex-col items-center gap-2 pt-2 w-full lg:w-sm">
             <span>
               Semana {currentWeek} do dia{" "}
               {getDateFromWeek(currentWeek).toLocaleDateString(

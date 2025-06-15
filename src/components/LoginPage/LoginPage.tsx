@@ -3,23 +3,23 @@ import Image from "next/image";
 import logoIFSD from "@/assets/img/logo_horizontal_santosdumont-1.png";
 
 import { LoginButtonGoogle } from "@/components/LoginButtonGoogle";
+import { SyntheticEvent } from "react";
 
 export function LoginPage() {
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col  gap-1 lg:gap-4">
         <Image
           src={logoIFSD}
           alt="Logo IFSudesteMG Campus Santos Dumont"
-          className="h-32 w-auto mx-auto"
-          width={500}
-          height={100}
-          // onError={(e) => {
-          //   e.target.onerror = null;
-          //   e.target.src = "https://via.placeholder.com/150?text=IFSD+Logo";
-          // }}
+          className="w-lg mx-auto"
+          onError={(e: SyntheticEvent<HTMLImageElement>) => {
+            (e.target as HTMLImageElement).onerror = null;
+            (e.target as HTMLImageElement).src =
+              "https://via.placeholder.com/150?text=IFSudesteMG";
+          }}
         />
-        <h1 className="text-4xl font-bold text-green-800 mt-4">
+        <h1 className="text-3xl lg:text-4xl font-bold text-green-800 mt-4">
           Agendamento de Ambientes
         </h1>
         <div className="flex flex-col items-center mt-6">

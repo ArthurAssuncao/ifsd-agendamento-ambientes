@@ -81,7 +81,10 @@ export const TimeSlot = React.memo(
     };
 
     const hasChangeEvent = () => {
-      return !disabled && scheduleSlot?.user?.email === session?.user.email;
+      return (
+        (!disabled && !scheduleSlot) ||
+        scheduleSlot?.user?.email === session?.user.email
+      );
     };
 
     const handleSyncError = (e: MouseEvent<HTMLSpanElement>) => {

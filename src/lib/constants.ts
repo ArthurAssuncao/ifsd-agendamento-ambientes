@@ -91,4 +91,13 @@ export const ENVIRONMENTS: Environment[] = [
     shortName: "Auditório",
     id: "Auditorio",
   },
-];
+].sort((a, b) => {
+  if (a.name < b.name) {
+    return -1;
+  } else if (a.name > b.name) {
+    return 1;
+  }
+  return 0;
+});
+
+export const NUMBER_DAYS_OF_WORK_WEEK = 6;

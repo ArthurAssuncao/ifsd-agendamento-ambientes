@@ -1,5 +1,6 @@
 import { useEmailColors } from "@/hooks/useEmailColors";
 import { useSchedule } from "@/hooks/useSchedule";
+import { NUMBER_DAYS_OF_WORK_WEEK } from "@/lib/constants";
 import {
   DAYS_OF_WEEK_TO_ENGLISH,
   daysOfWeekPtBr,
@@ -10,6 +11,8 @@ import {
 } from "@/lib/utils";
 import { DaysWeek, ScheduleSlot } from "@/types";
 import { useEffect, useRef, useState } from "react";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { useMediaQuery } from "react-responsive";
 import { ContextMenu, ContextMenuData } from "../ContextMenu";
 import { TimeSlot } from "./TimeSlot";
 
@@ -39,6 +42,8 @@ export function TimeTable({ labId, week }: TimeTableProps) {
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isUserScroll = useRef(true);
   const { getEmailColor } = useEmailColors();
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+  const [visibleColumn, setVisibleColumn] = useState(1);
 
   useEffect(() => {
     columnRefs.current = columnRefs.current.slice(0, 7);
@@ -126,6 +131,28 @@ export function TimeTable({ labId, week }: TimeTableProps) {
     },
   ];
 
+  const nextDayToShow = () => {
+    setVisibleColumn((prev) => {
+      const newValue = (prev + 1) % NUMBER_DAYS_OF_WORK_WEEK;
+
+      if (newValue > 0) {
+        return newValue;
+      }
+      return 6;
+    });
+  };
+
+  const prevDayToShow = () => {
+    setVisibleColumn((prev) => {
+      const newValue = (prev - 1) % NUMBER_DAYS_OF_WORK_WEEK;
+
+      if (newValue > 0) {
+        return newValue;
+      }
+      return 6;
+    });
+  };
+
   return (
     <div className="min-w-full overflow-x-auto mt-4 bg-white rounded-lg shadow-lg ">
       {contextMenu && (
@@ -149,7 +176,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
             columnRefs.current[0] = el;
           }}
         >
-          <div className="h-[60px] flex items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
+          <div className="h-16 flex items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
             Horário \ Dia
           </div>
           {timeSlots.map((slot) => {
@@ -178,7 +205,9 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                 ref={(el: HTMLDivElement | null) => {
                   columnRefs.current[dayIndex + 1] = el;
                 }}
-                className={`overscroll-auto scrollbar-none overflow-y-scroll flex-1 min-w-[150px] border-r border-gray-300 last:border-r-0 ${
+                className={`${
+                  isMobile && dayIndex + 1 != visibleColumn && "hidden"
+                } overscroll-auto scrollbar-none overflow-y-scroll flex-1 lg:min-w-36 border-r border-gray-300 last:border-r-0 ${
                   getSlotClasses("").col
                 }`}
                 style={{
@@ -187,13 +216,33 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                 }}
               >
                 {/* Cabeçalho do dia */}
-                <div className="h-[60px] flex flex-col items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
-                  <div>{day}</div>
-                  <div className="text-sm">
-                    {date.toLocaleDateString("pt-BR", {
-                      month: "numeric",
-                      day: "numeric",
-                    })}
+                <div className="h-16 flex flex-col items-center justify-center font-bold border-b border-gray-300 bg-gray-100 sticky top-0 z-10">
+                  <div className="flex p-2 w-full lg:w-auto justify-between content-center">
+                    {isMobile && (
+                      <button onClick={prevDayToShow}>
+                        <FaChevronLeft
+                          size={36}
+                          className="hover:text-green-700 hover:cursor-pointer transition-colors"
+                        />
+                      </button>
+                    )}
+                    <div className="flex flex-col w-full">
+                      <span>{day}</span>
+                      <div className="text-sm">
+                        {date.toLocaleDateString("pt-BR", {
+                          month: "numeric",
+                          day: "numeric",
+                        })}
+                      </div>
+                    </div>
+                    {isMobile && (
+                      <button onClick={nextDayToShow}>
+                        <FaChevronRight
+                          size={36}
+                          className="hover:text-green-700 hover:cursor-pointer transition-colors"
+                        />
+                      </button>
+                    )}
                   </div>
                 </div>
 
