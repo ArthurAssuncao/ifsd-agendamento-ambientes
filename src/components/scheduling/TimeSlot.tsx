@@ -1,4 +1,3 @@
-import { useEmailColors } from "@/hooks/useEmailColors";
 import {
   COLOR_DISABLED_SLOT,
   EMAIL_SCHEDULE_COMISSION,
@@ -28,6 +27,7 @@ type TimeSlotProps = {
   groupHeight?: number;
   isFirstInGroup?: boolean;
   isLastInGroup?: boolean;
+  getEmailColor: (email: string | undefined | null) => string;
 };
 
 export const TimeSlot = React.memo(
@@ -46,9 +46,10 @@ export const TimeSlot = React.memo(
     groupHeight = 1,
     isFirstInGroup = true,
     isLastInGroup = true,
+    getEmailColor,
   }: TimeSlotProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { getEmailColor } = useEmailColors();
+
     const [isHovered, setIsHovered] = useState(false);
 
     const handleSlotClick = () => {
@@ -89,7 +90,8 @@ export const TimeSlot = React.memo(
 
     const calculateColor = () => {
       if (!scheduleSlot) return "#f9fafb";
-      return scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION
+      return scheduleSlot.user?.email &&
+        scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION
         ? `${getEmailColor(scheduleSlot.user?.email).toLowerCase()}`
         : "#f3f4f6";
     };

@@ -1,5 +1,7 @@
 import { Environment } from "@/types/schedule";
 
+export const EMAIL_IFSUDESTEMG_DOMAIN = "ifsudestemg.edu.br";
+
 export const TIME_SLOT_COLORS = [
   // Grupo 1: Cores Pastéis Delicadas (Destaque Principal)
   "#FFD1DC", // Rosa bebê

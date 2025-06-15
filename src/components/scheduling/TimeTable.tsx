@@ -1,3 +1,4 @@
+import { useEmailColors } from "@/hooks/useEmailColors";
 import { useSchedule } from "@/hooks/useSchedule";
 import {
   DAYS_OF_WEEK_TO_ENGLISH,
@@ -37,6 +38,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
   const { schedule, updateSlot } = useSchedule(false);
   const columnRefs = useRef<(HTMLDivElement | null)[]>([]);
   const isUserScroll = useRef(true);
+  const { getEmailColor } = useEmailColors();
 
   useEffect(() => {
     columnRefs.current = columnRefs.current.slice(0, 7);
@@ -225,6 +227,7 @@ export function TimeTable({ labId, week }: TimeTableProps) {
                       groupHeight={groupHeight}
                       isFirstInGroup={true}
                       isLastInGroup={true}
+                      getEmailColor={getEmailColor}
                     />
                   );
                 })}

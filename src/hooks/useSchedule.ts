@@ -1,5 +1,5 @@
 // Tipos importados (assumindo que existem em @/types)
-import { EMAIL_SCHEDULE_COMISSION } from "@/lib/constants";
+import { EMAIL_IFSUDESTEMG_DOMAIN } from "@/lib/constants";
 import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
 import {
   checkMinutePassed,
@@ -25,6 +25,7 @@ import {
 } from "@/types/useSchedule";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
+import { titleCase } from "title-case";
 import { useScheduleStorage } from "./useScheduleStorage";
 
 // Implementação do hook useSchedule
@@ -40,6 +41,14 @@ export const useSchedule: UseScheduleHook = (
   const supabase = useSupabase();
   const { executeWithLock } = useSupabaseWithLock();
 
+  const extractNameFromEmail = (email: string) => {
+    const emailSplitted = email
+      .replace(`@${EMAIL_IFSUDESTEMG_DOMAIN}`, "")
+      .split(".");
+    const name = emailSplitted.join(" ");
+    return titleCase(name);
+  };
+
   // 1. Carregamento inicial do schedule
   useEffect(() => {
     const loadSchedule = async (): Promise<void> => {
@@ -49,10 +58,8 @@ export const useSchedule: UseScheduleHook = (
       try {
         // Tenta carregar do Supabase
         const result = await executeWithLock(async (client) => {
-          return await client
-            .from("environment_schedule")
-            .select("*")
-            .in("user_email", [session.user.email, EMAIL_SCHEDULE_COMISSION]);
+          return await client.from("environment_schedule").select("*");
+          // .in("user_email", [session.user.email, EMAIL_SCHEDULE_COMISSION]);
         });
 
         const { data, error } = result;
@@ -122,7 +129,7 @@ export const useSchedule: UseScheduleHook = (
               activity: item.activity_name,
               user: {
                 email: item.user_email,
-                name: session.user?.name || item.user_email,
+                name: extractNameFromEmail(item.user_email),
               },
               bookingTime: item.booking_time,
               details: item.details || undefined,
