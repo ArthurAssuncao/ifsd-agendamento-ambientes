@@ -1,8 +1,8 @@
 // Configuração do repositório diretamente no arquivo
 const GITHUB_CONFIG = {
-  owner: "facebook", // Altere aqui para o usuário/organização desejada
-  repo: "react", // Altere aqui para o repositório desejado
-  branch: "main", // Altere aqui para a branch desejada
+  owner: "arthurassuncao",
+  repo: "ifsd-agendamento-ambientes",
+  branch: "main",
 };
 
 export type LastCommitInfo = {
@@ -83,6 +83,9 @@ export const lastVersion = async (): Promise<string> => {
   const info = await getLastCommitInfo(owner, repo, branch);
   let version;
   if (info.date) {
+    if (process.env.NODE_ENV === "development") {
+      console.log("Date version", info.date);
+    }
     version = convertToCustomFormat(info.date);
   }
   return version ? version : "1.0.0";
