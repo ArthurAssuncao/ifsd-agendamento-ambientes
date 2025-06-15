@@ -1,5 +1,6 @@
 import { useUserActivities } from "@/hooks/useUserActivities";
 import Button from "@/ui/Button";
+import { RadioGroup } from "@/ui/RadioGroup";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
 import { IoMdCloseCircleOutline } from "react-icons/io";
@@ -7,9 +8,14 @@ import { IoMdCloseCircleOutline } from "react-icons/io";
 type ActivityModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (activity: string) => void;
+  onSelect: (activity: string, details?: string) => void;
   onRemove: () => void;
   currentActivity: string | null;
+};
+
+type ActivityOption = {
+  value: string;
+  label: string;
 };
 
 const ActivityModalIntern = ({
@@ -20,22 +26,47 @@ const ActivityModalIntern = ({
   currentActivity,
 }: ActivityModalProps) => {
   const { data: session } = useSession();
-  const { activities, loading, error, addActivity } = useUserActivities();
-  const [customActivity, setCustomActivity] = useState("");
-
-  // Exemplo de uso real da sessão:
-  const isAdmin = session?.user?.email?.endsWith("@admin.ifsudestemg.edu.br");
+  const { activities, loading, error } = useUserActivities();
+  const [detailsActivity, setDetailsActivity] = useState<string>("");
+  const [activitySelected, setActivitySelected] = useState<string>();
 
   if (!isOpen) return null;
 
-  const handleActivitySelect = (activity: string) => {
-    onSelect(activity);
+  const handleActivitySelect = () => {
+    if (activitySelected) {
+      onSelect(
+        activitySelected,
+        detailsActivity == "" ? undefined : detailsActivity
+      );
+    }
     onClose();
+  };
+
+  const activitiesOptions: ActivityOption[] = activities.flatMap(
+    (activity: string) => {
+      return [
+        {
+          value: activity.toLocaleLowerCase().replace(" ", "_"),
+          label: activity,
+        },
+      ];
+    }
+  );
+
+  const handleChange = (valueSelected: string) => {
+    const newActivitySelected = activitiesOptions.find(
+      (value: ActivityOption) => {
+        return value.value == valueSelected;
+      }
+    );
+    if (newActivitySelected) {
+      setActivitySelected(newActivitySelected?.label);
+    }
   };
 
   return (
     <div
-      className="fixed inset-0 bg-black/[0.4] backdrop-blur-xs flex items-center justify-center z-50"
+      className="p-2 fixed inset-0 bg-black/[0.4] backdrop-blur-xs flex items-center justify-center z-50 shadow"
       onClick={onClose}
     >
       <div
@@ -67,63 +98,58 @@ const ActivityModalIntern = ({
           <div className="text-red-500 mb-4">{error}</div>
         ) : (
           <div className="space-y-2 mb-4">
-            {activities.map((activity) => (
-              <button
-                key={activity}
-                className={`w-full text-left p-2 rounded ${
-                  currentActivity === activity
-                    ? "bg-blue-100"
-                    : "hover:bg-gray-100"
-                }`}
-                onClick={() => handleActivitySelect(activity)}
-              >
-                {activity}
-              </button>
-            ))}
+            {activities && (
+              <RadioGroup
+                options={activitiesOptions}
+                name="options"
+                onChange={handleChange}
+                defaultValue="option2"
+              />
+            )}
           </div>
         )}
 
         <div className=" flex mb-4">
           <div className="flex flex-1 flex-col items-start">
-            <label className="block mb-2" htmlFor="custom-activity">
-              Outra atividade:
+            <label className="block mb-2" htmlFor="details-activity">
+              Descreva a atividade (opcional):
             </label>
             <div className="flex w-full gap-2">
               <input
-                id="custom-activity"
-                placeholder="Digite uma nova atividade"
+                id="details-activity"
+                placeholder="Indique a turma, projeto ou outra informação que preferir"
                 type="text"
-                className="w-full p-2 border rounded"
-                value={customActivity}
-                onChange={(e) => setCustomActivity(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border-2 border-gray-400 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none transition-colors"
+                value={detailsActivity}
+                onChange={(e) => setDetailsActivity(e.target.value)}
               />
-              <Button
-                className="min-w-2/10"
-                onClick={() => {
-                  if (customActivity.trim()) {
-                    if (isAdmin) {
-                      // Se for admin, adiciona à lista permanente
-                      addActivity(customActivity);
-                    }
-                    handleActivitySelect(customActivity);
-                  }
-                }}
-              >
-                {isAdmin ? "Salvar e usar" : "Usar esta"}
-              </Button>
             </div>
           </div>
         </div>
 
-        {currentActivity && (
-          <Button variant="danger" onClick={onRemove} className="mr-2">
-            Remover Atividade da tabela
-          </Button>
-        )}
+        <div className="flex justify-center gap-4 flex-wrap">
+          {currentActivity && (
+            <Button variant="danger" onClick={onRemove}>
+              Remover Atividade da tabela
+            </Button>
+          )}
 
-        <Button variant="secondary" onClick={onClose}>
-          Cancelar
-        </Button>
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+
+          <Button
+            className="min-w-2/10"
+            onClick={() => {
+              if (activitySelected) {
+                handleActivitySelect();
+              }
+            }}
+            disabled={!activitySelected}
+          >
+            Marcar
+          </Button>
+        </div>
       </div>
     </div>
   );

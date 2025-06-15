@@ -284,7 +284,8 @@ export const useSchedule: UseScheduleHook = (
       labId: string,
       day: DaysWeek,
       time: string,
-      activity?: string
+      activity?: string,
+      details?: string
     ): void => {
       if (process.env.NODE_ENV === "development") {
         console.log(
@@ -310,6 +311,7 @@ export const useSchedule: UseScheduleHook = (
               name: session?.user?.name || session?.user?.email || "",
             },
             bookingTime: new Date().toISOString(),
+            details: details,
           };
 
           newSchedule[weekNumber] = newSchedule[weekNumber] || {};

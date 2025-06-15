@@ -58,8 +58,8 @@ export const TimeSlot = React.memo(
       setIsModalOpen(true);
     };
 
-    const handleActivitySelect = (activity: string) => {
-      updateSlot(week, labId, day as DaysWeek, time, activity);
+    const handleActivitySelect = (activity: string, details?: string) => {
+      updateSlot(week, labId, day as DaysWeek, time, activity, details);
       setIsModalOpen(false);
     };
 
@@ -215,8 +215,8 @@ export const TimeSlot = React.memo(
               {scheduleSlot.user.email !== EMAIL_SCHEDULE_COMISSION &&
                 scheduleSlot.bookingTime &&
                 groupHeight > 1 && (
-                  <div className="text-xs text-gray-500 mt-1 justify-end">
-                    Reserva realizada em{" "}
+                  <div className="text-xs text-gray-500 mt-1 justify-end content-end mr-8 ml-8">
+                    Reservado em{" "}
                     {new Date(scheduleSlot.bookingTime).toLocaleDateString(
                       "pt-br",
                       {

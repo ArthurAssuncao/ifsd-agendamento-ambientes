@@ -4,6 +4,7 @@ type UserActivities = {
   email: string;
   name: string;
   activities: string[];
+  lastUpdate?: number;
 };
 
 export const useUserActivitiesStorage = () => {
@@ -20,8 +21,9 @@ export const useUserActivitiesStorage = () => {
   }, []);
 
   const saveToStorage = useCallback((data: UserActivities) => {
+    const newData = { ...data, lastUpdate: new Date().getTime() };
     try {
-      localStorage.setItem(storageKey, JSON.stringify(data));
+      localStorage.setItem(storageKey, JSON.stringify(newData));
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
     }

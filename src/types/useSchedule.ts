@@ -40,7 +40,8 @@ export type UpdateSlotFunction = (
   labId: string,
   day: DaysWeek,
   time: string,
-  activity?: string
+  activity?: string,
+  details?: string
 ) => void;
 
 export type ClearSlotFunction = (

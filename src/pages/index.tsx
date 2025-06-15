@@ -1,7 +1,6 @@
 // pages/index.js
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
-import { ListActivities } from "@/components/ListActivities/ListActivities";
 import { LoginPage } from "@/components/LoginPage/LoginPage";
 import { NavBar } from "@/components/NavBar";
 import { Schedules } from "@/components/scheduling/Schedules";
@@ -132,7 +131,7 @@ export default function Home() {
         <Schedules currentWeek={currentWeek} />
       </main>
 
-      <ListActivities />
+      {/* <ListActivities /> */}
 
       <StatusBar />
       <ToastContainer

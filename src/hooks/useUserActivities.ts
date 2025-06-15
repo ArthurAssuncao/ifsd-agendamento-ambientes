@@ -1,4 +1,5 @@
 import { useSupabase, useSupabaseWithLock } from "@/lib/supabaseClient";
+import { checkMinutePassed } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { useUserActivitiesStorage } from "./useUserActivitiesStorage";
@@ -15,6 +16,13 @@ export function useUserActivities() {
   // Usamos ref para valores mutáveis que não devem disparar recriações
   const sessionRef = useRef(session);
   sessionRef.current = session;
+
+  const newActivitiesDefault = [
+    "Aula",
+    "Projeto",
+    "Reunião",
+    "Outra atividade",
+  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -62,7 +70,7 @@ export function useUserActivities() {
                   .split(",")
                   .map((s: string) => s.trim())
                   .filter(Boolean),
-                "Outra atividade",
+                ...newActivitiesDefault,
               ]),
             ]
           : ["Aula", "Projeto", "Reunião", "Outra atividade"];
@@ -85,12 +93,6 @@ export function useUserActivities() {
         console.error("Error fetching activities:", err);
         if (isMounted) {
           setError("Falha ao carregar atividades");
-          const newActivitiesDefault = [
-            "Aula",
-            "Projeto",
-            "Reunião",
-            "Outra atividade",
-          ];
           setActivities(newActivitiesDefault);
           saveToStorage({
             email: sessionRef?.current?.user.email || "",
@@ -103,13 +105,25 @@ export function useUserActivities() {
       }
     };
 
+    const verifyEachHour = 1 * 60;
     const activitiesFromStorage = loadFromStorage();
-    if (activitiesFromStorage && activitiesFromStorage.activities.length > 0) {
+    if (
+      activitiesFromStorage &&
+      activitiesFromStorage.activities.length > newActivitiesDefault.length &&
+      (activitiesFromStorage.lastUpdate === undefined ||
+        !checkMinutePassed(activitiesFromStorage.lastUpdate, verifyEachHour))
+    ) {
       // Se houver atividades no armazenamento, use-as
+      if (process.env.NODE_ENV === "development") {
+        console.log("Usando atividades do localstorage");
+      }
       setActivities(activitiesFromStorage.activities);
       setLoading(false);
     } else {
       // Caso contrário, busque do Supabase
+      if (process.env.NODE_ENV === "development") {
+        console.log("Atualizando atividades");
+      }
       fetchActivities();
     }
 

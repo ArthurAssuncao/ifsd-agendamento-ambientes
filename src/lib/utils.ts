@@ -31,12 +31,14 @@ export function checkMinutePassed(timestamp: number, minutes = 1) {
   const storedTime = timestamp;
 
   if (!storedTime) {
-    return false; // Não existe timestamp armazenado
+    return false;
   }
 
   const currentTime = new Date().getTime();
   const timeDifference = currentTime - storedTime;
   const minuteMili = minutes * 60 * 1000;
+
+  const hasPassed = timeDifference >= minuteMili;
 
   if (process.env.NODE_ENV === "development") {
     console.log(
@@ -46,11 +48,11 @@ export function checkMinutePassed(timestamp: number, minutes = 1) {
         currentTime
       ).toLocaleString()}, Diferença: ${(timeDifference / 1000 / 60).toFixed(
         2
-      )} min ${timeDifference >= minuteMili ? ">= 1 minuto" : "< 1 minuto"}`
+      )} min ${hasPassed ? `>= ${minutes} minuto` : `< ${minutes} minuto`}`
     );
   }
 
-  return timeDifference >= minuteMili;
+  return hasPassed;
 }
 
 export const timeSlots = [
