@@ -6,6 +6,7 @@ import {
 import { DaysWeek, ScheduleSlot } from "@/types";
 import { UpdateSlotFunction } from "@/types/useSchedule";
 import { isEqual } from "lodash";
+import { useSession } from "next-auth/react";
 import React, { MouseEvent, useState } from "react";
 import { MdSyncProblem } from "react-icons/md";
 import { toast } from "react-toastify";
@@ -49,13 +50,12 @@ export const TimeSlot = React.memo(
     getEmailColor,
   }: TimeSlotProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { data: session } = useSession();
 
     const [isHovered, setIsHovered] = useState(false);
 
     const handleSlotClick = () => {
-      if (!disabled && scheduleSlot?.user?.email !== EMAIL_SCHEDULE_COMISSION) {
-        setIsModalOpen(true);
-      }
+      setIsModalOpen(true);
     };
 
     const handleActivitySelect = (activity: string) => {
@@ -68,17 +68,20 @@ export const TimeSlot = React.memo(
       if (process.env.NODE_ENV === "development") {
         console.log("Schedule slot context menu clicked", scheduleSlot);
       }
-      if (!disabled && scheduleSlot?.user?.email !== EMAIL_SCHEDULE_COMISSION) {
-        e.preventDefault();
-        setContextMenu({
-          x: e.clientX,
-          y: e.clientY,
-          week,
-          labId,
-          day: day as DaysWeek,
-          time,
-        });
-      }
+
+      e.preventDefault();
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        week,
+        labId,
+        day: day as DaysWeek,
+        time,
+      });
+    };
+
+    const hasChangeEvent = () => {
+      return !disabled && scheduleSlot?.user?.email === session?.user.email;
     };
 
     const handleSyncError = (e: MouseEvent<HTMLSpanElement>) => {
@@ -138,14 +141,14 @@ export const TimeSlot = React.memo(
             height: `${groupHeight * 64}px`,
             backgroundColor: backgroundColor,
             zIndex: isHovered ? 10 : 1,
-            cursor: disabled ? "not-allowed" : "pointer",
+            cursor: !hasChangeEvent() ? "not-allowed" : "pointer",
             pointerEvents: disabled ? "none" : "auto",
             opacity: disabled ? 0.5 : 1,
           }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
-          onClick={handleSlotClick}
-          onContextMenu={handleContextMenu}
+          onClick={hasChangeEvent() ? handleSlotClick : () => {}}
+          onContextMenu={hasChangeEvent() ? handleContextMenu : () => {}}
         >
           {scheduleSlot && showContent && (
             <div className="absolute inset-0 p-2 flex flex-col justify-around select-none">
@@ -191,11 +194,24 @@ export const TimeSlot = React.memo(
               {scheduleSlot.user?.email !== EMAIL_SCHEDULE_COMISSION && (
                 <div className="text-xs text-green-800 truncate">
                   {scheduleSlot.user?.name}
+                  {groupHeight == 1 && (
+                    <span className="text-xs text-gray-500 mt-1 justify-end">
+                      {" "}
+                      {new Date(scheduleSlot.bookingTime).toLocaleDateString(
+                        "pt-br",
+                        {
+                          day: "numeric",
+                          month: "numeric",
+                        }
+                      )}
+                    </span>
+                  )}
                 </div>
               )}
 
               {scheduleSlot.user.email !== EMAIL_SCHEDULE_COMISSION &&
-                scheduleSlot.bookingTime && (
+                scheduleSlot.bookingTime &&
+                groupHeight > 1 && (
                   <div className="text-xs text-gray-500 mt-1 justify-end">
                     Reserva realizada em{" "}
                     {new Date(scheduleSlot.bookingTime).toLocaleDateString(
