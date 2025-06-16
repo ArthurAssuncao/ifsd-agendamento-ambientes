@@ -70,14 +70,7 @@ export const TimeSlot = React.memo(
       }
 
       if (process.env.NODE_ENV === "development") {
-        console.log(
-          "mergeTop, mergeBottom, groupHeight, isFirstInGroup, isLastInGroup",
-          mergeTop,
-          mergeBottom,
-          groupHeight,
-          isFirstInGroup,
-          isLastInGroup
-        );
+        console.log("data", scheduleSlot, day, time, labId, week, groupHeight);
       }
 
       e.preventDefault();
@@ -285,7 +278,11 @@ export const TimeSlot = React.memo(
   (prevProps, nextProps) => {
     return (
       (prevProps.scheduleSlot == undefined &&
-        nextProps.scheduleSlot == undefined) ||
+        nextProps.scheduleSlot == undefined &&
+        prevProps.day === nextProps.day &&
+        prevProps.time === nextProps.time &&
+        prevProps.labId === nextProps.labId &&
+        prevProps.week === nextProps.week) ||
       (prevProps.day === nextProps.day &&
         prevProps.time === nextProps.time &&
         prevProps.labId === nextProps.labId &&

@@ -322,6 +322,9 @@ export const useSchedule: UseScheduleHook = (
 
           // Sincroniza com o Supabase
           syncSlot(weekNumber, labId, dayEnglish, time, newSlot);
+          if (process.env.NODE_ENV === "development") {
+            console.log("saving in db", newSchedule);
+          }
         } else {
           // Remove o slot
           if (process.env.NODE_ENV === "development") {

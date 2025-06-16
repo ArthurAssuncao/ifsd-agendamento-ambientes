@@ -4,6 +4,19 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 @plugin 'tailwind-scrollbar';
 
+/* force light mode*/
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  html {
+    color-scheme: light;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
