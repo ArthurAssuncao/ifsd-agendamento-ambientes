@@ -18,9 +18,7 @@ export function RadioGroup({
   onChange,
   name,
 }: RadioGroupProps) {
-  const [selectedValue, setSelectedValue] = useState(
-    defaultValue || options[0]?.value || ""
-  );
+  const [selectedValue, setSelectedValue] = useState(defaultValue || "");
 
   const handleChange = (value: string) => {
     setSelectedValue(value);

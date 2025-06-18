@@ -247,11 +247,11 @@ export function getDateAddedDays(date: Date, days: number): Date {
   return result;
 }
 
-export function getNextTime(time: string): string {
+export function getNextTime(time: string, timeToAdd = 1): string {
   const timeParts = time.split(":").map(Number);
   let hours = timeParts[0];
   let minutes = timeParts[1];
-  minutes += MINUTES_PER_SLOT;
+  minutes += MINUTES_PER_SLOT * timeToAdd;
   if (minutes >= 60) {
     minutes -= 60;
     hours += 1;

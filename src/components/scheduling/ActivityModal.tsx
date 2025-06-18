@@ -11,6 +11,10 @@ type ActivityModalProps = {
   onSelect: (activity: string, details?: string) => void;
   onRemove: () => void;
   currentActivity: string | null;
+  currentDetails: string | null;
+  day: string;
+  time: string;
+  grouped: boolean;
 };
 
 type ActivityOption = {
@@ -24,11 +28,19 @@ const ActivityModalIntern = ({
   onSelect,
   onRemove,
   currentActivity,
+  currentDetails,
+  day,
+  time,
+  grouped,
 }: ActivityModalProps) => {
   const { data: session } = useSession();
   const { activities, loading, error } = useUserActivities();
-  const [detailsActivity, setDetailsActivity] = useState<string>("");
-  const [activitySelected, setActivitySelected] = useState<string>();
+  const [detailsActivity, setDetailsActivity] = useState<string>(
+    currentDetails ? currentDetails : ""
+  );
+  const [activitySelected, setActivitySelected] = useState<string>(
+    currentActivity ? currentActivity : ""
+  );
 
   if (!isOpen) return null;
 
@@ -50,6 +62,12 @@ const ActivityModalIntern = ({
           label: activity,
         },
       ];
+    }
+  );
+
+  const currentActivitySelected = activitiesOptions.find(
+    (value: ActivityOption) => {
+      return currentActivity ? value.label == currentActivity : "";
     }
   );
 
@@ -80,6 +98,16 @@ const ActivityModalIntern = ({
               Para: {session.user.name}
             </span>
           )}
+          <span className="flex mt-2 text-sm font-normal text-gray-700">
+            {currentActivity && `Atual: ${currentActivity}`}
+          </span>
+          <span
+            className={`flex text-sm font-normal text-gray-700 ${
+              grouped && "text-red-700"
+            }`}
+          >
+            {day && time && `Horário: ${day} ${time}`}
+          </span>
           <Button
             className="absolute top-[-8] right-[-8]"
             onClick={onClose}
@@ -103,7 +131,7 @@ const ActivityModalIntern = ({
                 options={activitiesOptions}
                 name="options"
                 onChange={handleChange}
-                defaultValue="option2"
+                defaultValue={currentActivitySelected?.value}
               />
             )}
           </div>
@@ -135,7 +163,7 @@ const ActivityModalIntern = ({
           )}
 
           <Button variant="secondary" onClick={onClose}>
-            Cancelar
+            Fechar
           </Button>
 
           <Button

@@ -101,3 +101,5 @@ export const ENVIRONMENTS: Environment[] = [
 });
 
 export const NUMBER_DAYS_OF_WORK_WEEK = 6;
+
+export const FIRST_TIME = "07:45";

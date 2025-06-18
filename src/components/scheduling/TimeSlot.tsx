@@ -3,11 +3,12 @@ import {
   EMAIL_SCHEDULE_COMISSION,
   MINUTES_PER_SLOT,
 } from "@/lib/constants";
+import { DAYS_OF_WEEK_TO_ENGLISH, getNextTime } from "@/lib/utils";
 import { DaysWeek, ScheduleSlot } from "@/types";
 import { UpdateSlotFunction } from "@/types/useSchedule";
 import { isEqual } from "lodash";
 import { useSession } from "next-auth/react";
-import React, { MouseEvent, useState } from "react";
+import React, { MouseEvent, useRef, useState } from "react";
 import { MdSyncProblem } from "react-icons/md";
 import { toast } from "react-toastify";
 import { ContextMenuData } from "../ContextMenu";
@@ -51,26 +52,64 @@ export const TimeSlot = React.memo(
   }: TimeSlotProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const { data: session } = useSession();
+    const elementRef = useRef<HTMLDivElement>(null);
+    const [currentTime, setCurrentTime] = useState(time);
 
     const [isHovered, setIsHovered] = useState(false);
+    const slotId = `${labId}-${DAYS_OF_WEEK_TO_ENGLISH[day]}-${time}`
+      .replace(":", "-")
+      .toLocaleLowerCase();
+    const slotHeight = 64;
 
-    const handleSlotClick = () => {
+    const getSlotPosition = (event: React.MouseEvent<HTMLDivElement>) => {
+      const slotElement = elementRef.current;
+      if (!slotElement) return { x: 0, y: 0 };
+      const rect = slotElement.getBoundingClientRect();
+      const x = event.clientX - rect.left; // Posição X relativa
+      const y = event.clientY - rect.top; // Posição Y relativa
+      return { x, y };
+    };
+
+    const handleSlotClick = (event: React.MouseEvent<HTMLDivElement>) => {
+      const slotPosition = getSlotPosition(event);
+      if (groupHeight > 1) {
+        const slotsAfter = Math.floor(slotPosition.y / slotHeight);
+        console.log("Slots after", slotsAfter);
+
+        const newTime = getNextTime(time, slotsAfter);
+        setCurrentTime(newTime);
+      }
+
+      if (process.env.NODE_ENV === "development") {
+        console.log("click in position", slotPosition);
+      }
+
       setIsModalOpen(true);
     };
 
     const handleActivitySelect = (activity: string, details?: string) => {
-      updateSlot(week, labId, day as DaysWeek, time, activity, details);
+      updateSlot(week, labId, day as DaysWeek, currentTime, activity, details);
       setIsModalOpen(false);
     };
 
     const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
+
       if (process.env.NODE_ENV === "development") {
         console.log("Schedule slot context menu clicked", scheduleSlot);
       }
 
       if (process.env.NODE_ENV === "development") {
-        console.log("data", scheduleSlot, day, time, labId, week, groupHeight);
+        console.log(
+          "data",
+          scheduleSlot,
+          day,
+          time,
+          labId,
+          week,
+          groupHeight,
+          slotId
+        );
       }
 
       e.preventDefault();
@@ -135,8 +174,10 @@ export const TimeSlot = React.memo(
     return (
       <>
         <div
+          id={slotId}
+          ref={elementRef}
           data-disabled={disabled}
-          className={` flex relative transition-colors duration-200 ${
+          className={`flex relative transition-colors duration-200 select-none ${
             mergeTop && !isFirstInGroup
               ? "border border-transparent"
               : "border-t border-gray-200"
@@ -148,7 +189,7 @@ export const TimeSlot = React.memo(
           
           ${className}`}
           style={{
-            height: `${groupHeight * 64}px`,
+            height: `${groupHeight * slotHeight}px`,
             backgroundColor: backgroundColor,
             zIndex: isHovered ? 10 : 1,
             cursor: !hasChangeEvent() ? "not-allowed" : "pointer",
@@ -161,7 +202,11 @@ export const TimeSlot = React.memo(
           onContextMenu={hasChangeEvent() ? handleContextMenu : () => {}}
         >
           {scheduleSlot && showContent && (
-            <div className="absolute inset-0 p-2 flex flex-col justify-around select-none">
+            <div
+              className={`absolute inset-0 p-${
+                groupHeight == 1 ? "1" : "2"
+              } flex flex-col justify-around select-none`}
+            >
               <div
                 className={`flex flex-col ${
                   groupHeight > 1 ? "gap-2" : ""
@@ -222,7 +267,7 @@ export const TimeSlot = React.memo(
               {scheduleSlot.user.email !== EMAIL_SCHEDULE_COMISSION &&
                 scheduleSlot.bookingTime &&
                 groupHeight > 1 && (
-                  <div className="text-xs text-gray-500 mt-1 justify-end content-end mr-8 ml-8">
+                  <div className="text-xs text-gray-500 mt-1 mb-1 justify-end content-end mr-8 ml-8">
                     Reservado em{" "}
                     {new Date(scheduleSlot.bookingTime).toLocaleDateString(
                       "pt-br",
@@ -244,7 +289,7 @@ export const TimeSlot = React.memo(
               )}
 
               {groupHeight > 1 && isLastInGroup && (
-                <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                <div className="absolute bottom-0 right-1 text-xs text-gray-400">
                   {`${
                     minutesGroupSlots >= 60
                       ? Math.floor(minutesGroupSlots / 60) + "h"
@@ -252,6 +297,17 @@ export const TimeSlot = React.memo(
                   }${minutesGroupSlots % 60}min`}
                 </div>
               )}
+            </div>
+          )}
+
+          {isHovered && (
+            <div
+              className={`absolute top-[0] right-0 text-[0.7rem] text-white bg-gray-800 overflow-visible rounded p-1 pl-2 pr-2 z-10 opacity-95`}
+            >
+              <span className="flex justify-center">{day}</span>
+              <span className="flex justify-center">
+                {time} {`a ${getNextTime(time, groupHeight)}`}
+              </span>
             </div>
           )}
 
@@ -266,10 +322,14 @@ export const TimeSlot = React.memo(
             onClose={() => setIsModalOpen(false)}
             onSelect={handleActivitySelect}
             currentActivity={scheduleSlot?.activity || null}
+            currentDetails={scheduleSlot?.details || null}
             onRemove={() => {
-              updateSlot(week, labId, day as DaysWeek, time);
+              updateSlot(week, labId, day as DaysWeek, currentTime);
               setIsModalOpen(false);
             }}
+            day={day}
+            time={currentTime}
+            grouped={groupHeight > 1}
           />
         )}
       </>
