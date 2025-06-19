@@ -78,6 +78,8 @@ export const TimeSlot = React.memo(
 
         const newTime = getNextTime(time, slotsAfter);
         setCurrentTime(newTime);
+      } else {
+        setCurrentTime(time);
       }
 
       if (process.env.NODE_ENV === "development") {
@@ -94,6 +96,17 @@ export const TimeSlot = React.memo(
 
     const handleContextMenu = (e: MouseEvent<HTMLDivElement>) => {
       e.stopPropagation();
+      const slotPosition = getSlotPosition(e);
+      let newTime = time;
+      if (groupHeight > 1) {
+        const slotsAfter = Math.floor(slotPosition.y / slotHeight);
+        console.log("Slots after", slotsAfter);
+
+        newTime = getNextTime(time, slotsAfter);
+        setCurrentTime(newTime);
+      } else {
+        setCurrentTime(time);
+      }
 
       if (process.env.NODE_ENV === "development") {
         console.log("Schedule slot context menu clicked", scheduleSlot);
@@ -104,7 +117,7 @@ export const TimeSlot = React.memo(
           "data",
           scheduleSlot,
           day,
-          time,
+          newTime,
           labId,
           week,
           groupHeight,
@@ -119,7 +132,7 @@ export const TimeSlot = React.memo(
         week,
         labId,
         day: day as DaysWeek,
-        time,
+        time: newTime,
       });
     };
 
